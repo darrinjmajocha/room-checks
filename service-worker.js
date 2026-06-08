@@ -1,3 +1,5 @@
+const CACHE_NAME = "room-checks-v4";
+const ASSETS = ["./", "./index.html", "./styles.css", "./app.js", "./manifest.webmanifest"];
 const CACHE_NAME = "room-checks-v3";
 const ASSETS = ["./", "./index.html", "./styles.css", "./app.js", "./room-checks-core.mjs", "./manifest.webmanifest"];
 
