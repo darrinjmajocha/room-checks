@@ -77,6 +77,7 @@
       <section class="actions-bar" aria-label="Entry actions">
         <button id="saveEntryButton" class="primary-button" type="button">OK — save room and start next</button>
         <button id="resetCurrentButton" class="ghost-button" type="button">Reset current room</button>
+        <p id="actionStatus" class="action-status" role="status" aria-live="polite"></p>
       </section>
 
       <section class="panel" aria-labelledby="saved-heading">
@@ -94,6 +95,17 @@
         <div id="savedEntries" class="saved-entries"></div>
       </section>
     </main>
+
+    <dialog id="confirmDialog" class="confirm-dialog" aria-labelledby="confirmDialogTitle">
+      <form method="dialog">
+        <h2 id="confirmDialogTitle"></h2>
+        <p id="confirmDialogMessage"></p>
+        <div class="dialog-actions">
+          <button id="cancelDialogButton" class="ghost-button" value="cancel">Cancel</button>
+          <button id="confirmDialogButton" class="danger-button" value="confirm"></button>
+        </div>
+      </form>
+    </dialog>
 
     <template id="issueTemplate">
       <article class="issue-card">
