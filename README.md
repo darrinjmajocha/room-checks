@@ -52,16 +52,3 @@ Each selected issue/subcategory becomes its own CSV row. Photos for a room are a
 ## Privacy note
 
 All draft and saved entry data is stored in the browser's `localStorage` on the device being used. GitHub Pages does not provide a database or server-side CSV writer, so users should download the CSV before clearing browser data or switching devices.
-
-## Resolving merge conflicts for app updates
-
-Do not choose **Accept both changes** for `index.html`, `app.js`, or `service-worker.js` unless you manually remove duplicated code afterward. Duplicated scripts, building lists, or service-worker constants can prevent the app from starting.
-
-When merging an update PR into the older deployed version:
-
-- Choose **Accept incoming change** for `index.html`, `app.js`, `styles.css`, and `service-worker.js` when the incoming side is the new room-check update.
-- Choose **Accept current change** only when the current branch contains a deliberate edit you want to keep instead of the update.
-- If both sides contain changes you need, edit the conflict manually into one valid copy rather than accepting both wholesale.
-- Remove every `<<<<<<<`, `=======`, and `>>>>>>>` marker before marking the conflict resolved.
-
-After merging, wait for the GitHub Pages action to finish successfully before testing the site.

@@ -91,9 +91,7 @@ textarea { margin-top: 0.75rem; resize: vertical; }
   justify-content: space-between;
   gap: 1rem;
 }
-.issue-card[open] > .issue-toggle { background: #fff4ed; }
-.issue-toggle { list-style: none; cursor: pointer; }
-.issue-toggle::-webkit-details-marker { display: none; }
+.issue-toggle[aria-expanded="true"] { background: #fff4ed; }
 .issue-name { font-weight: 900; }
 .issue-summary { color: var(--muted); font-size: 0.9rem; }
 .subcategory-list { padding: 0.25rem 0.85rem 0.75rem; display: grid; gap: 0.4rem; }

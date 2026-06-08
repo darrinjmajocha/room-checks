@@ -1,3 +1,5 @@
+import { collectDraftIssues, sortCategoriesDescending } from "./room-checks-core.mjs";
+
 const STORAGE_KEY = "rit-room-checks-v1";
 const DRAFT_KEY = "rit-room-checks-draft-v1";
 
@@ -152,33 +154,36 @@ function showStatus(message, isError = false) {
 }
 
 function renderBuildings() {
-  const savedBuilding = state.draft.building || buildings[0];
-  if ([...buildingSelect.options].some((option) => option.value === savedBuilding)) {
-    buildingSelect.value = savedBuilding;
-  }
+  buildingSelect.innerHTML = buildings.map((building) => `<option value="${escapeHtml(building)}">${escapeHtml(building)}</option>`).join("");
+  buildingSelect.value = state.draft.building || buildings[0];
   roomNumber.value = state.draft.roomNumber || "";
 }
 
 function renderIssueCatalog() {
-  const cards = [...issueCatalogEl.querySelectorAll(".issue-card[data-issue]")];
-  cards.sort((cardA, cardB) => cardB.dataset.issue.localeCompare(cardA.dataset.issue));
-  cards.forEach((card) => issueCatalogEl.append(card));
+  issueCatalogEl.innerHTML = "";
+  const issueTemplate = document.querySelector("#issueTemplate");
+  const subcategoryTemplate = document.querySelector("#subcategoryTemplate");
 
-  cards.forEach((issueNode) => {
-    const issue = issueNode.dataset.issue;
+  const categories = sortCategoriesDescending(issueCatalog);
+
+  categories.forEach(([issue, subcategories]) => {
+    const issueNode = issueTemplate.content.firstElementChild.cloneNode(true);
+    const toggle = issueNode.querySelector(".issue-toggle");
+    const name = issueNode.querySelector(".issue-name");
     const summary = issueNode.querySelector(".issue-summary");
-    issueNode.open = false;
+    const list = issueNode.querySelector(".subcategory-list");
+    name.textContent = issue;
 
-    issueNode.querySelectorAll(".subcategory-row[data-subcategory]").forEach((row) => {
-      const subcategory = row.dataset.subcategory;
-      const checkbox = row.querySelector('input[type="checkbox"]');
+    subcategories.forEach((subcategory) => {
+      const row = subcategoryTemplate.content.firstElementChild.cloneNode(true);
+      const checkbox = row.querySelector("input");
+      const label = row.querySelector("span");
       const textarea = row.querySelector("textarea");
+      label.textContent = subcategory;
       checkbox.checked = Object.prototype.hasOwnProperty.call(state.draft.issues?.[issue] || {}, subcategory);
       textarea.value = state.draft.issues?.[issue]?.[subcategory] || "";
       textarea.hidden = !checkbox.checked;
 
-      if (row.dataset.bound === "true") return;
-      row.dataset.bound = "true";
       checkbox.addEventListener("change", () => {
         if (!state.draft.issues[issue]) state.draft.issues[issue] = {};
         textarea.hidden = !checkbox.checked;
@@ -197,22 +202,30 @@ function renderIssueCatalog() {
         state.draft.issues[issue][subcategory] = textarea.value.trim();
         saveDraft();
       });
+
+      list.append(row);
     });
 
-    if (issueNode.dataset.bound !== "true") {
-      issueNode.dataset.bound = "true";
-      issueNode.addEventListener("toggle", () => updateIssueSummary(issueNode, issue));
-    }
-    summary.textContent = "Tap to expand";
+    toggle.addEventListener("click", () => {
+      const willExpand = toggle.getAttribute("aria-expanded") !== "true";
+      toggle.setAttribute("aria-expanded", String(willExpand));
+      list.hidden = !willExpand;
+      updateIssueSummary(issueNode, issue);
+    });
+
+    toggle.setAttribute("aria-expanded", "false");
+    list.hidden = true;
     updateIssueSummary(issueNode, issue);
+    issueCatalogEl.append(issueNode);
   });
 }
 
 function updateIssueSummary(issueNode, issue) {
   const selectedCount = Object.keys(state.draft.issues?.[issue] || {}).length;
+  const isExpanded = issueNode.querySelector(".issue-toggle").getAttribute("aria-expanded") === "true";
   issueNode.querySelector(".issue-summary").textContent = selectedCount
     ? `${selectedCount} selected`
-    : issueNode.open
+    : isExpanded
       ? "Tap to collapse"
       : "Tap to expand";
 }
