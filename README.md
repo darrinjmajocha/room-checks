@@ -21,7 +21,7 @@ A mobile-friendly static web app for residence hall room checks. It can be hoste
 
 ## Updating dorm/building names
 
-Edit the `buildings` array near the top of `app.js` when the final RIT dorm list is available.
+The complete residence hall list is maintained in the `buildings` array near the top of `app.js`. Edit that array if the university's list changes.
 
 ## CSV format
 
