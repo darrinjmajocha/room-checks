@@ -5,10 +5,11 @@ A mobile-friendly static web app for residence hall room checks. It can be hoste
 ## What it does
 
 - Select a residence hall building and enter a room number.
-- Expand issue categories and select as many subcategories as apply.
+- Browse compact issue categories in descending alphabetical order, expand only the categories you need, and select as many subcategories as apply.
 - Shows a description box below every selected subcategory.
 - Adds multiple photos from a phone camera or photo library.
-- Saves each submitted room locally in the browser.
+- Saves each submitted room locally in the browser and displays a visible success or error message.
+- Confirms before resetting the current draft or clearing all saved entries.
 - Exports saved room checks as a CSV file.
 - Provides a basic service worker and web app manifest so the site can be installed on supported phones.
 
@@ -18,6 +19,17 @@ A mobile-friendly static web app for residence hall room checks. It can be hoste
 2. Open **Settings → Pages**.
 3. Choose the branch that contains these files and set the site source to the repository root.
 4. Visit the generated GitHub Pages URL on a phone.
+
+## Seeing the latest deployed version
+
+After merging or pushing changes, GitHub Pages usually republishes the site automatically within a few minutes. If the GitHub Pages URL still shows an old version on your phone:
+
+1. Confirm the changes are merged or pushed to the branch configured under **Settings → Pages**.
+2. Wait a few minutes, then fully close and reopen the browser tab.
+3. Refresh the page once while online so the service worker can download the newest files.
+4. If it still looks stale, clear website data for the GitHub Pages URL or remove and re-add the home-screen app shortcut.
+
+Saved room-check entries are stored separately in `localStorage`, so clearing website data removes saved draft/entry data from that device.
 
 ## Updating dorm/building names
 
