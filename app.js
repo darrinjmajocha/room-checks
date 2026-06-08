@@ -1,3 +1,5 @@
+import { collectDraftIssues, sortCategoriesDescending } from "./room-checks-core.mjs";
+
 const STORAGE_KEY = "rit-room-checks-v1";
 const DRAFT_KEY = "rit-room-checks-draft-v1";
 
