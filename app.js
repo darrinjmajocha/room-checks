@@ -1,3 +1,5 @@
+import { collectDraftIssues, sortCategoriesDescending } from "./room-checks-core.mjs";
+
 const STORAGE_KEY = "rit-room-checks-v1";
 const DRAFT_KEY = "rit-room-checks-draft-v1";
 
@@ -78,6 +80,12 @@ const installButton = document.querySelector("#installButton");
 const roomForm = document.querySelector("#roomForm");
 const addCustomIssueButton = document.querySelector("#addCustomIssueButton");
 const customIssueList = document.querySelector("#customIssueList");
+const actionStatus = document.querySelector("#actionStatus");
+const confirmDialog = document.querySelector("#confirmDialog");
+const confirmDialogTitle = document.querySelector("#confirmDialogTitle");
+const confirmDialogMessage = document.querySelector("#confirmDialogMessage");
+const confirmDialogButton = document.querySelector("#confirmDialogButton");
+const cancelDialogButton = document.querySelector("#cancelDialogButton");
 
 function defaultDraft() {
   return { building: buildings[0], roomNumber: "", issues: {}, customIssues: [], photos: [] };
@@ -99,15 +107,31 @@ function loadDraft() {
   return { ...defaultDraft(), ...readStoredJson(DRAFT_KEY, "{}") };
 }
 
+function writeStoredJson(key, value) {
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+    return true;
+  } catch (error) {
+    console.error(`Could not save ${key}`, error);
+    return false;
+  }
+}
+
 function saveEntries() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state.entries));
+  if (!writeStoredJson(STORAGE_KEY, state.entries)) return false;
   renderSavedEntries();
+  return true;
 }
 
 function saveDraft() {
   state.draft.building = buildingSelect.value;
   state.draft.roomNumber = roomNumber.value.trim();
-  localStorage.setItem(DRAFT_KEY, JSON.stringify(state.draft));
+  return writeStoredJson(DRAFT_KEY, state.draft);
+}
+
+function showStatus(message, isError = false) {
+  actionStatus.textContent = message;
+  actionStatus.classList.toggle("error", isError);
 }
 
 function renderBuildings() {
@@ -121,7 +145,9 @@ function renderIssueCatalog() {
   const issueTemplate = document.querySelector("#issueTemplate");
   const subcategoryTemplate = document.querySelector("#subcategoryTemplate");
 
-  Object.entries(issueCatalog).forEach(([issue, subcategories]) => {
+  const categories = sortCategoriesDescending(issueCatalog);
+
+  categories.forEach(([issue, subcategories]) => {
     const issueNode = issueTemplate.content.firstElementChild.cloneNode(true);
     const toggle = issueNode.querySelector(".issue-toggle");
     const name = issueNode.querySelector(".issue-name");
@@ -135,7 +161,7 @@ function renderIssueCatalog() {
       const label = row.querySelector("span");
       const textarea = row.querySelector("textarea");
       label.textContent = subcategory;
-      checkbox.checked = Boolean(state.draft.issues?.[issue]?.[subcategory]);
+      checkbox.checked = Object.prototype.hasOwnProperty.call(state.draft.issues?.[issue] || {}, subcategory);
       textarea.value = state.draft.issues?.[issue]?.[subcategory] || "";
       textarea.hidden = !checkbox.checked;
 
@@ -165,11 +191,11 @@ function renderIssueCatalog() {
       const willExpand = toggle.getAttribute("aria-expanded") !== "true";
       toggle.setAttribute("aria-expanded", String(willExpand));
       list.hidden = !willExpand;
+      updateIssueSummary(issueNode, issue);
     });
 
-    const hasSelections = Object.keys(state.draft.issues?.[issue] || {}).length > 0;
-    toggle.setAttribute("aria-expanded", String(hasSelections));
-    list.hidden = !hasSelections;
+    toggle.setAttribute("aria-expanded", "false");
+    list.hidden = true;
     updateIssueSummary(issueNode, issue);
     issueCatalogEl.append(issueNode);
   });
@@ -177,14 +203,29 @@ function renderIssueCatalog() {
 
 function updateIssueSummary(issueNode, issue) {
   const selectedCount = Object.keys(state.draft.issues?.[issue] || {}).length;
-  issueNode.querySelector(".issue-summary").textContent = selectedCount ? `${selectedCount} selected` : "Tap to expand";
+  const isExpanded = issueNode.querySelector(".issue-toggle").getAttribute("aria-expanded") === "true";
+  issueNode.querySelector(".issue-summary").textContent = selectedCount
+    ? `${selectedCount} selected`
+    : isExpanded
+      ? "Tap to collapse"
+      : "Tap to expand";
 }
 
 async function handlePhotos(files) {
-  const photos = await Promise.all([...files].map(fileToPhoto));
-  state.draft.photos.push(...photos);
-  saveDraft();
-  renderPhotos();
+  try {
+    const photos = await Promise.all([...files].map(fileToPhoto));
+    state.draft.photos.push(...photos);
+    if (!saveDraft()) {
+      state.draft.photos.splice(-photos.length, photos.length);
+      showStatus("Those photos could not be saved. Try fewer or smaller photos.", true);
+      return;
+    }
+    renderPhotos();
+    showStatus(`${photos.length} photo${photos.length === 1 ? "" : "s"} added.`);
+  } catch (error) {
+    console.error("Could not read selected photos", error);
+    showStatus("The selected photos could not be read.", true);
+  }
 }
 
 function fileToPhoto(file) {
@@ -251,49 +292,61 @@ function renderPhotos() {
 }
 
 function collectIssues() {
-  const selectedIssues = Object.entries(state.draft.issues)
-    .flatMap(([issue, subcategories]) => Object.entries(subcategories).map(([subcategory, description]) => ({ issue, subcategory, description })))
-    .filter(({ subcategory }) => subcategory);
-  const customIssues = state.draft.customIssues
-    .map(({ subcategory, description }) => ({ issue: "Other", subcategory, description }))
-    .filter(({ subcategory, description }) => subcategory || description)
-    .map(({ issue, subcategory, description }) => ({ issue, subcategory: subcategory || "Other", description }));
-  return [...selectedIssues, ...customIssues];
+  return collectDraftIssues(state.draft);
 }
 
 function createEntryId() {
-  return crypto.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  return globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
 
 function saveCurrentEntry() {
+  showStatus("");
   saveDraft();
   const issues = collectIssues();
   if (!state.draft.building || !state.draft.roomNumber) {
-    alert("Please choose a building and enter a room number.");
+    showStatus("Choose a building and enter a room number before saving.", true);
+    roomNumber.focus();
     return;
   }
   if (!issues.length) {
-    alert("Please select at least one issue before saving this room.");
+    showStatus("Select at least one issue before saving this room.", true);
     return;
   }
 
-  state.entries.push({
+  const savedRoomNumber = state.draft.roomNumber;
+  const entry = {
     id: createEntryId(),
     createdAt: new Date().toISOString(),
     building: state.draft.building,
-    roomNumber: state.draft.roomNumber,
+    roomNumber: savedRoomNumber,
     issues,
-    photos: state.draft.photos,
-  });
-  saveEntries();
+    photos: [...state.draft.photos],
+  };
+  state.entries.push(entry);
+
+  // The photos already exist in the draft. Remove that temporary copy before
+  // writing the entry so large photo sets are not stored twice at once.
+  try {
+    localStorage.removeItem(DRAFT_KEY);
+  } catch (error) {
+    console.error("Could not remove the temporary room draft", error);
+  }
+  if (!saveEntries()) {
+    state.entries.pop();
+    writeStoredJson(DRAFT_KEY, state.draft);
+    showStatus("This room could not be saved. Browser storage may be full; remove some photos and try again.", true);
+    return;
+  }
+
   resetCurrentDraft(true);
+  showStatus(`Room ${savedRoomNumber} saved. Ready for the next room.`);
   roomNumber.focus();
 }
 
 function resetCurrentDraft(keepBuilding = false) {
   const building = keepBuilding ? state.draft.building : buildings[0];
   state.draft = { ...defaultDraft(), building };
-  localStorage.setItem(DRAFT_KEY, JSON.stringify(state.draft));
+  writeStoredJson(DRAFT_KEY, state.draft);
   renderBuildings();
   renderIssueCatalog();
   renderCustomIssues();
@@ -327,6 +380,52 @@ function renderSavedEntries() {
     `;
     savedEntries.append(entryEl);
   });
+}
+
+function requestConfirmation({ title, message, confirmLabel }) {
+  if (typeof confirmDialog.showModal !== "function") {
+    return Promise.resolve(window.confirm(message));
+  }
+
+  confirmDialogTitle.textContent = title;
+  confirmDialogMessage.textContent = message;
+  confirmDialogButton.textContent = confirmLabel;
+  confirmDialog.returnValue = "cancel";
+  confirmDialog.showModal();
+  cancelDialogButton.focus();
+
+  return new Promise((resolve) => {
+    confirmDialog.addEventListener("close", () => resolve(confirmDialog.returnValue === "confirm"), { once: true });
+  });
+}
+
+async function confirmResetCurrentRoom() {
+  const confirmed = await requestConfirmation({
+    title: "Reset current room?",
+    message: "This will permanently remove the room number, selected issues, descriptions, and photos in the current draft.",
+    confirmLabel: "Reset current room",
+  });
+  if (!confirmed) return;
+  resetCurrentDraft(false);
+  showStatus("Current room draft reset.");
+}
+
+async function confirmClearSavedEntries() {
+  const confirmed = await requestConfirmation({
+    title: "Clear all saved entries?",
+    message: "This will permanently remove every saved room entry from this device. Download the CSV first if you need a copy.",
+    confirmLabel: "Clear saved entries",
+  });
+  if (!confirmed) return;
+
+  const previousEntries = state.entries;
+  state.entries = [];
+  if (!saveEntries()) {
+    state.entries = previousEntries;
+    showStatus("Saved entries could not be cleared.", true);
+    return;
+  }
+  showStatus("All saved entries cleared.");
 }
 
 function downloadCsv() {
@@ -377,14 +476,9 @@ roomForm.addEventListener("submit", (event) => event.preventDefault());
 clearIssuesButton.addEventListener("click", clearIssueSelections);
 addCustomIssueButton.addEventListener("click", addCustomIssue);
 saveEntryButton.addEventListener("click", saveCurrentEntry);
-resetCurrentButton.addEventListener("click", () => resetCurrentDraft(false));
+resetCurrentButton.addEventListener("click", confirmResetCurrentRoom);
 downloadCsvButton.addEventListener("click", downloadCsv);
-clearEntriesButton.addEventListener("click", () => {
-  if (confirm("Clear all saved room entries from this device?")) {
-    state.entries = [];
-    saveEntries();
-  }
-});
+clearEntriesButton.addEventListener("click", confirmClearSavedEntries);
 
 window.addEventListener("beforeinstallprompt", (event) => {
   event.preventDefault();
