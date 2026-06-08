@@ -2,20 +2,24 @@ const STORAGE_KEY = "rit-room-checks-v1";
 const DRAFT_KEY = "rit-room-checks-draft-v1";
 
 const buildings = [
-  "Baker Hall",
-  "Colby Hall",
-  "Ellingson Hall",
-  "Gleason Hall",
-  "Gibson Hall",
-  "Kate Gleason Hall",
-  "Nathaniel Rochester Hall",
-  "Peterson Hall",
-  "Residence Hall A",
-  "Residence Hall B",
-  "Residence Hall C",
-  "Sol Heumann Hall",
-  "University Commons",
-  "Other / not listed yet",
+  "Baker A",
+  "Baker B",
+  "Colby A",
+  "Colby B",
+  "Colby C",
+  "DSP",
+  "Ellingson",
+  "Fish A",
+  "Fish B",
+  "Fish C",
+  "Gleason",
+  "Gibson A",
+  "Gibson B",
+  "Peterson",
+  "Res Hall A",
+  "Res Hall B",
+  "Res Hall C",
+  "Sol Huemann",
 ];
 
 const issueCatalog = {
