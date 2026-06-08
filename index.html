@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#f36e21" />
+    <title>RIT Room Checks</title>
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="app-header">
+      <div>
+        <p class="eyebrow">RIT Facilities Room Checks</p>
+        <h1>Room Check Reporter</h1>
+      </div>
+      <button id="installButton" class="ghost-button" hidden>Install</button>
+    </header>
+
+    <main class="app-shell">
+      <section class="panel intro-card" aria-labelledby="start-heading">
+        <div>
+          <h2 id="start-heading">Start a room entry</h2>
+          <p>
+            Pick a residence hall, enter the room, select every issue observed, add details and photos,
+            then save. Your entries are stored on this device until you export or clear them.
+          </p>
+        </div>
+
+        <form id="roomForm" class="room-form">
+          <label for="buildingSelect">Building</label>
+          <select id="buildingSelect" name="building" required></select>
+
+          <label for="roomNumber">Room number</label>
+          <input id="roomNumber" name="roomNumber" type="text" inputmode="text" autocomplete="off" placeholder="Example: 4020, 6067, 11009" required />
+        </form>
+      </section>
+
+      <section class="panel" aria-labelledby="issues-heading">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Step 2</p>
+            <h2 id="issues-heading">Select observed issues</h2>
+          </div>
+          <button id="clearIssuesButton" class="ghost-button" type="button">Clear issue selections</button>
+        </div>
+        <div id="issueCatalog" class="issue-catalog"></div>
+
+        <div class="custom-issues" aria-labelledby="custom-issues-heading">
+          <div class="section-heading compact-heading">
+            <div>
+              <h3 id="custom-issues-heading">Additional other issues</h3>
+              <p class="hint">Add as many one-off issues as needed when the preset buttons do not fit.</p>
+            </div>
+            <button id="addCustomIssueButton" class="ghost-button" type="button">Add other issue</button>
+          </div>
+          <div id="customIssueList" class="custom-issue-list"></div>
+        </div>
+      </section>
+
+      <section class="panel" aria-labelledby="photos-heading">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Optional</p>
+            <h2 id="photos-heading">Attach photos</h2>
+          </div>
+        </div>
+        <p class="hint">Photos stay in this browser and are included in the CSV export as data links.</p>
+        <label class="file-drop" for="photoInput">
+          <span>Tap to add photos</span>
+          <small>Use camera or photo library. Add as many as needed.</small>
+        </label>
+        <input id="photoInput" class="visually-hidden" type="file" accept="image/*" capture="environment" multiple />
+        <div id="photoPreview" class="photo-preview" aria-live="polite"></div>
+      </section>
+
+      <section class="actions-bar" aria-label="Entry actions">
+        <button id="saveEntryButton" class="primary-button" type="button">OK — save room and start next</button>
+        <button id="resetCurrentButton" class="ghost-button" type="button">Reset current room</button>
+      </section>
+
+      <section class="panel" aria-labelledby="saved-heading">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Saved locally</p>
+            <h2 id="saved-heading">Entries ready for CSV</h2>
+          </div>
+          <span id="entryCount" class="count-pill">0 entries</span>
+        </div>
+        <div class="export-actions">
+          <button id="downloadCsvButton" class="primary-button secondary" type="button">Download CSV</button>
+          <button id="clearEntriesButton" class="danger-button" type="button">Clear saved entries</button>
+        </div>
+        <div id="savedEntries" class="saved-entries"></div>
+      </section>
+    </main>
+
+    <template id="issueTemplate">
+      <article class="issue-card">
+        <button class="issue-toggle" type="button" aria-expanded="false">
+          <span class="issue-name"></span>
+          <span class="issue-summary"></span>
+        </button>
+        <div class="subcategory-list" hidden></div>
+      </article>
+    </template>
+
+    <template id="subcategoryTemplate">
+      <div class="subcategory-row">
+        <label class="subcategory-check">
+          <input type="checkbox" />
+          <span></span>
+        </label>
+        <textarea rows="3" placeholder="Describe what needs attention..." hidden></textarea>
+      </div>
+    </template>
+
+    <template id="customIssueTemplate">
+      <div class="custom-issue-row">
+        <label>
+          Other issue name
+          <input class="custom-issue-name" type="text" placeholder="Example: Furniture damage" />
+        </label>
+        <label>
+          Description
+          <textarea class="custom-issue-description" rows="3" placeholder="Describe what needs attention..."></textarea>
+        </label>
+        <button class="danger-button" type="button">Remove other issue</button>
+      </div>
+    </template>
+
+    <script src="app.js" type="module"></script>
+  </body>
+</html>
