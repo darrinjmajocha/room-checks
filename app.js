@@ -1,5 +1,3 @@
-import { collectDraftIssues, sortCategoriesDescending } from "./room-checks-core.mjs";
-
 const STORAGE_KEY = "rit-room-checks-v1";
 const DRAFT_KEY = "rit-room-checks-draft-v1";
 
@@ -57,6 +55,25 @@ const issueCatalog = {
   ],
   "Water Leaks": ["Bathroom", "Ceiling", "Kitchen", "Sprinkler System", "Other"],
 };
+
+function sortCategoriesDescending(catalog) {
+  return Object.entries(catalog).sort(([categoryA], [categoryB]) => categoryB.localeCompare(categoryA));
+}
+
+function collectDraftIssues(draft) {
+  const selectedIssues = Object.entries(draft.issues || {})
+    .flatMap(([issue, subcategories]) =>
+      Object.entries(subcategories || {}).map(([subcategory, description]) => ({ issue, subcategory, description })),
+    )
+    .filter(({ subcategory }) => subcategory);
+
+  const customIssues = (draft.customIssues || [])
+    .map(({ subcategory, description }) => ({ issue: "Other", subcategory, description }))
+    .filter(({ subcategory, description }) => subcategory || description)
+    .map(({ issue, subcategory, description }) => ({ issue, subcategory: subcategory || "Other", description }));
+
+  return [...selectedIssues, ...customIssues];
+}
 
 const state = {
   draft: loadDraft(),
