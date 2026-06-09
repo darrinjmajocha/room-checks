@@ -109,6 +109,13 @@ const confirmDialogTitle = document.querySelector("#confirmDialogTitle");
 const confirmDialogMessage = document.querySelector("#confirmDialogMessage");
 const confirmDialogButton = document.querySelector("#confirmDialogButton");
 const cancelDialogButton = document.querySelector("#cancelDialogButton");
+const photoIssueDialog = document.querySelector("#photoIssueDialog");
+const photoIssueOptions = document.querySelector("#photoIssueOptions");
+const savePhotoIssuesButton = document.querySelector("#savePhotoIssuesButton");
+const infoDialog = document.querySelector("#infoDialog");
+const copyToast = document.querySelector("#copyToast");
+let activePhotoIndex = null;
+let copyToastTimer = null;
 
 function defaultDraft() {
   return { building: buildings[0], roomNumber: "", issues: {}, customIssues: [], photos: [] };
@@ -245,7 +252,7 @@ async function fileToPhoto(file) {
   const dataUrl = await readFileAsDataUrl(file);
   const image = await loadImage(dataUrl);
   const resizedDataUrl = drawResizedImage(image, 1800).toDataURL("image/jpeg", 0.86);
-  return { originalName: file.name, dataUrl: resizedDataUrl };
+  return { originalName: file.name, dataUrl: resizedDataUrl, associatedIssues: [] };
 }
 
 function readFileAsDataUrl(file) {
@@ -286,22 +293,47 @@ async function labelPhoto(photo, building, room, index) {
   const height = canvas.height;
   const context = canvas.getContext("2d");
 
-  const label = `${building} — ${room}`;
-  let fontSize = Math.max(36, Math.round(width * 0.055));
-  const padding = Math.max(18, Math.round(fontSize * 0.5));
-  context.font = `800 ${fontSize}px system-ui, sans-serif`;
+  const roomLabel = `${building} — ${room}`;
+  const issueLabels = (photo.associatedIssues || []).map(({ issue, subcategory }) => `${issue} -- ${subcategory}`);
+  const padding = Math.max(18, Math.round(width * 0.025));
   const maximumTextWidth = Math.max(1, width - padding * 2);
-  while (context.measureText(label).width > maximumTextWidth && fontSize > 22) {
-    fontSize -= 2;
-    context.font = `800 ${fontSize}px system-ui, sans-serif`;
+
+  function fittedFont(text, startingSize, minimumSize, weight) {
+    let size = startingSize;
+    context.font = `${weight} ${size}px system-ui, sans-serif`;
+    while (context.measureText(text).width > maximumTextWidth && size > minimumSize) {
+      size -= 2;
+      context.font = `${weight} ${size}px system-ui, sans-serif`;
+    }
+    return size;
   }
-  const boxWidth = Math.min(width, Math.ceil(context.measureText(label).width + padding * 2));
-  const boxHeight = Math.ceil(fontSize * 1.25 + padding * 1.4);
+
+  const roomFontSize = fittedFont(roomLabel, Math.max(36, Math.round(width * 0.055)), 22, 800);
+  const roomLineHeight = Math.round(roomFontSize * 1.25);
+  const issueFontSizes = issueLabels.map((label) => fittedFont(label, Math.max(24, Math.round(width * 0.035)), 18, 700));
+  const issueLineHeights = issueFontSizes.map((size) => Math.round(size * 1.25));
+  const textWidths = [
+    (() => { context.font = `800 ${roomFontSize}px system-ui, sans-serif`; return context.measureText(roomLabel).width; })(),
+    ...issueLabels.map((label, lineIndex) => {
+      context.font = `700 ${issueFontSizes[lineIndex]}px system-ui, sans-serif`;
+      return context.measureText(label).width;
+    }),
+  ];
+  const boxWidth = Math.min(width, Math.ceil(Math.max(...textWidths) + padding * 2));
+  const boxHeight = Math.ceil(padding * 1.4 + roomLineHeight + issueLineHeights.reduce((total, lineHeight) => total + lineHeight, 0));
   context.fillStyle = "rgba(0, 0, 0, 0.76)";
   context.fillRect(0, 0, boxWidth, boxHeight);
   context.fillStyle = "#ffffff";
   context.textBaseline = "top";
-  context.fillText(label, padding, Math.round(padding * 0.7));
+  let textY = Math.round(padding * 0.7);
+  context.font = `800 ${roomFontSize}px system-ui, sans-serif`;
+  context.fillText(roomLabel, padding, textY);
+  textY += roomLineHeight;
+  issueLabels.forEach((label, lineIndex) => {
+    context.font = `700 ${issueFontSizes[lineIndex]}px system-ui, sans-serif`;
+    context.fillText(label, padding, textY);
+    textY += issueLineHeights[lineIndex];
+  });
 
   return {
     name: `${safeFilenamePart(building)}_${safeFilenamePart(room)}_${index + 1}.jpg`,
@@ -352,17 +384,81 @@ function addCustomIssue() {
   customIssueList.querySelector(".custom-issue-row:last-child input")?.focus();
 }
 
+function issueAssociationKey(issue) {
+  return `${issue.issue}\u001f${issue.subcategory}`;
+}
+
+function showInfoDialog() {
+  if (typeof infoDialog.showModal === "function") infoDialog.showModal();
+  else window.alert("Select categories to add them to images");
+}
+
+function openPhotoIssueDialog(photoIndex) {
+  const issues = collectIssues();
+  if (!issues.length) {
+    showInfoDialog();
+    return;
+  }
+
+  activePhotoIndex = photoIndex;
+  const photo = state.draft.photos[photoIndex];
+  const selectedKeys = new Set((photo.associatedIssues || []).map(issueAssociationKey));
+  photoIssueOptions.innerHTML = "";
+  issues.forEach(({ issue, subcategory }) => {
+    const label = document.createElement("label");
+    label.className = "photo-issue-option";
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.value = issueAssociationKey({ issue, subcategory });
+    checkbox.dataset.issue = issue;
+    checkbox.dataset.subcategory = subcategory;
+    checkbox.checked = selectedKeys.has(checkbox.value);
+    const text = document.createElement("span");
+    text.textContent = `${issue} -- ${subcategory}`;
+    label.append(checkbox, text);
+    photoIssueOptions.append(label);
+  });
+  photoIssueDialog.showModal();
+}
+
+function savePhotoIssueAssociations() {
+  if (activePhotoIndex === null) return;
+  state.draft.photos[activePhotoIndex].associatedIssues = [...photoIssueOptions.querySelectorAll('input[type="checkbox"]:checked')]
+    .map((checkbox) => ({ issue: checkbox.dataset.issue, subcategory: checkbox.dataset.subcategory }));
+  saveDraft();
+  renderPhotos();
+  activePhotoIndex = null;
+}
+
 function renderPhotos() {
   photoPreview.innerHTML = "";
   state.draft.photos.forEach((photo, index) => {
     const card = document.createElement("div");
     card.className = "photo-card";
-    card.innerHTML = `<img src="${photo.dataUrl}" alt="${escapeHtml(photo.originalName || photo.name || "Selected photo")}"><button class="ghost-button" type="button">Remove</button>`;
-    card.querySelector("button").addEventListener("click", () => {
+    const image = document.createElement("img");
+    image.src = photo.dataUrl;
+    image.alt = photo.originalName || photo.name || "Selected photo";
+    const associationSummary = document.createElement("p");
+    associationSummary.className = "photo-issue-summary";
+    const associationCount = (photo.associatedIssues || []).length;
+    associationSummary.textContent = associationCount
+      ? `${associationCount} issue${associationCount === 1 ? "" : "s"} logged`
+      : "No issues logged";
+    const logButton = document.createElement("button");
+    logButton.className = "ghost-button";
+    logButton.type = "button";
+    logButton.textContent = "Log Issue";
+    logButton.addEventListener("click", () => openPhotoIssueDialog(index));
+    const removeButton = document.createElement("button");
+    removeButton.className = "ghost-button";
+    removeButton.type = "button";
+    removeButton.textContent = "Remove";
+    removeButton.addEventListener("click", () => {
       state.draft.photos.splice(index, 1);
       saveDraft();
       renderPhotos();
     });
+    card.append(image, associationSummary, logButton, removeButton);
     photoPreview.append(card);
   });
 }
@@ -402,7 +498,12 @@ async function saveCurrentEntry() {
   showStatus(state.draft.photos.length ? "Labeling and saving photos…" : "Saving room…");
   let labeledPhotos;
   try {
-    labeledPhotos = await labelRoomPhotos(state.draft.photos, state.draft.building, savedRoomNumber);
+    const currentIssueKeys = new Set(issues.map(issueAssociationKey));
+    const photosForSubmission = state.draft.photos.map((photo) => ({
+      ...photo,
+      associatedIssues: (photo.associatedIssues || []).filter((issue) => currentIssueKeys.has(issueAssociationKey(issue))),
+    }));
+    labeledPhotos = await labelRoomPhotos(photosForSubmission, state.draft.building, savedRoomNumber);
   } catch (error) {
     console.error("Could not label room photos", error);
     showStatus("The photos could not be labeled. Remove the affected photo and try again.", true);
@@ -499,7 +600,7 @@ function renderSavedEntries() {
     const button = document.createElement("button");
     button.className = "ghost-button";
     button.type = "button";
-    button.textContent = "Download photo";
+    button.textContent = "Download";
     button.addEventListener("click", () => downloadPhoto(photo));
     card.append(image, name, button);
     savedPhotos.append(card);
@@ -566,6 +667,16 @@ function buildExportText() {
   return rows.map((row) => row.map(cleanTextCell).join("\t")).join("\n");
 }
 
+function showCopyToast() {
+  clearTimeout(copyToastTimer);
+  copyToast.hidden = false;
+  requestAnimationFrame(() => copyToast.classList.add("visible"));
+  copyToastTimer = setTimeout(() => {
+    copyToast.classList.remove("visible");
+    setTimeout(() => { copyToast.hidden = true; }, 250);
+  }, 2200);
+}
+
 async function copyExportText() {
   if (!state.entries.length) {
     showStatus("Save at least one room before copying the text.", true);
@@ -579,7 +690,7 @@ async function copyExportText() {
     exportText.select();
     document.execCommand("copy");
   }
-  showStatus("Room-check text copied. Paste it into cell A1 of your spreadsheet.");
+  showCopyToast();
 }
 
 function downloadTextFile() {
@@ -730,6 +841,8 @@ copyTextButton.addEventListener("click", copyExportText);
 downloadTextButton.addEventListener("click", downloadTextFile);
 downloadCsvButton.addEventListener("click", downloadCsvFile);
 downloadAllPhotosButton.addEventListener("click", downloadAllPhotos);
+savePhotoIssuesButton.addEventListener("click", savePhotoIssueAssociations);
+photoIssueDialog.addEventListener("close", () => { activePhotoIndex = null; });
 clearEntriesButton.addEventListener("click", confirmClearSavedEntries);
 
 window.addEventListener("beforeinstallprompt", (event) => {
