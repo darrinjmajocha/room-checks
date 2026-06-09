@@ -58,7 +58,6 @@
       <section class="panel" aria-labelledby="issues-heading">
         <div class="section-heading">
           <div>
-            <p class="eyebrow">Step 2</p>
             <h2 id="issues-heading">Select observed issues</h2>
           </div>
           <button id="clearIssuesButton" class="ghost-button" type="button">Clear issue selections</button>
@@ -551,11 +550,16 @@
         <div id="photoPreview" class="photo-preview" aria-live="polite"></div>
       </section>
 
-      <section class="actions-bar" aria-label="Entry actions">
-        <button id="saveEntryButton" class="primary-button" type="button">OK — save room and continue</button>
-        <button id="resetCurrentButton" class="ghost-button" type="button">Reset current room</button>
-        <p id="actionStatus" class="action-status" role="status" aria-live="polite"></p>
+      <section class="panel submit-panel" aria-labelledby="submit-heading">
+        <h2 id="submit-heading">Submit</h2>
+        <div class="actions-bar" aria-label="Entry actions">
+          <button id="saveEntryButton" class="primary-button" type="button">OK — save room and continue</button>
+          <button id="resetCurrentButton" class="ghost-button" type="button">Reset current room</button>
+          <p id="actionStatus" class="action-status" role="status" aria-live="polite"></p>
+        </div>
       </section>
+
+      <hr class="collected-data-divider" />
 
       <section class="panel" aria-labelledby="saved-heading">
         <div class="section-heading">
@@ -569,10 +573,14 @@
         <label class="export-label" for="exportText">Copyable room-check text</label>
         <textarea id="exportText" class="export-text" rows="10" readonly placeholder="Saved room data will appear here."></textarea>
         <div class="export-actions">
-          <button id="copyTextButton" class="primary-button secondary" type="button">Copy text</button>
-          <button id="downloadTextButton" class="ghost-button" type="button">Download text file</button>
-          <button id="downloadCsvButton" class="ghost-button" type="button">Download CSV file</button>
-          <button id="clearEntriesButton" class="danger-button" type="button">Clear saved entries</button>
+          <div class="export-action-column">
+            <button id="copyTextButton" class="primary-button secondary" type="button">Copy text</button>
+            <button id="clearEntriesButton" class="danger-button" type="button">Clear saved entries</button>
+          </div>
+          <div class="export-action-column">
+            <button id="downloadTextButton" class="ghost-button" type="button">Download text file</button>
+            <button id="downloadCsvButton" class="ghost-button" type="button">Download CSV file</button>
+          </div>
         </div>
         <div id="savedEntries" class="saved-entries"></div>
       </section>
@@ -590,6 +598,30 @@
         <div id="savedPhotos" class="saved-photo-grid"></div>
       </section>
     </main>
+
+    <div id="copyToast" class="copy-toast" role="status" aria-live="polite" hidden>Copied!</div>
+
+    <dialog id="photoIssueDialog" class="confirm-dialog photo-issue-dialog" aria-labelledby="photoIssueDialogTitle">
+      <form method="dialog">
+        <h2 id="photoIssueDialogTitle">Log Issues</h2>
+        <p>Select one or more issues shown in this photo.</p>
+        <div id="photoIssueOptions" class="photo-issue-options"></div>
+        <div class="dialog-actions">
+          <button id="cancelPhotoIssuesButton" class="ghost-button" value="cancel">Cancel</button>
+          <button id="savePhotoIssuesButton" class="primary-button" value="save">Save</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="infoDialog" class="confirm-dialog" aria-labelledby="infoDialogTitle">
+      <form method="dialog">
+        <h2 id="infoDialogTitle">No issues selected</h2>
+        <p id="infoDialogMessage">Select categories to add them to images</p>
+        <div class="dialog-actions">
+          <button class="primary-button" value="okay">Okay</button>
+        </div>
+      </form>
+    </dialog>
 
     <dialog id="confirmDialog" class="confirm-dialog" aria-labelledby="confirmDialogTitle">
       <form method="dialog">
