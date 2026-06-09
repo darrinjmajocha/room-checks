@@ -1,0 +1,9 @@
+{
+  "name": "RIT Room Check Reporter",
+  "short_name": "Room Checks",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#f7f8fb",
+  "theme_color": "#f36e21",
+  "description": "Mobile-friendly room check reporting, copyable tab-separated text, and labeled photo downloads for RIT residence spaces."
+}
