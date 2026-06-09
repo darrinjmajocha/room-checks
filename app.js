@@ -89,6 +89,7 @@ const saveEntryButton = document.querySelector("#saveEntryButton");
 const resetCurrentButton = document.querySelector("#resetCurrentButton");
 const copyTextButton = document.querySelector("#copyTextButton");
 const downloadTextButton = document.querySelector("#downloadTextButton");
+const downloadCsvButton = document.querySelector("#downloadCsvButton");
 const exportText = document.querySelector("#exportText");
 const downloadAllPhotosButton = document.querySelector("#downloadAllPhotosButton");
 const savedPhotos = document.querySelector("#savedPhotos");
@@ -285,21 +286,22 @@ async function labelPhoto(photo, building, room, index) {
   const height = canvas.height;
   const context = canvas.getContext("2d");
 
-  const fontSize = Math.max(24, Math.round(width * 0.035));
-  const padding = Math.max(14, Math.round(fontSize * 0.55));
-  const lineHeight = Math.round(fontSize * 1.2);
-  context.font = `700 ${fontSize}px system-ui, sans-serif`;
-  const boxWidth = Math.min(
-    width,
-    Math.ceil(Math.max(context.measureText(building).width, context.measureText(room).width) + padding * 2),
-  );
-  const boxHeight = lineHeight * 2 + padding * 1.5;
-  context.fillStyle = "rgba(0, 0, 0, 0.72)";
+  const label = `${building} — ${room}`;
+  let fontSize = Math.max(36, Math.round(width * 0.055));
+  const padding = Math.max(18, Math.round(fontSize * 0.5));
+  context.font = `800 ${fontSize}px system-ui, sans-serif`;
+  const maximumTextWidth = Math.max(1, width - padding * 2);
+  while (context.measureText(label).width > maximumTextWidth && fontSize > 22) {
+    fontSize -= 2;
+    context.font = `800 ${fontSize}px system-ui, sans-serif`;
+  }
+  const boxWidth = Math.min(width, Math.ceil(context.measureText(label).width + padding * 2));
+  const boxHeight = Math.ceil(fontSize * 1.25 + padding * 1.4);
+  context.fillStyle = "rgba(0, 0, 0, 0.76)";
   context.fillRect(0, 0, boxWidth, boxHeight);
   context.fillStyle = "#ffffff";
   context.textBaseline = "top";
-  context.fillText(building, padding, padding);
-  context.fillText(room, padding, padding + lineHeight);
+  context.fillText(label, padding, Math.round(padding * 0.7));
 
   return {
     name: `${safeFilenamePart(building)}_${safeFilenamePart(room)}_${index + 1}.jpg`,
@@ -385,6 +387,14 @@ async function saveCurrentEntry() {
   if (!issues.length) {
     showStatus("Select at least one issue before saving this room.", true);
     return;
+  }
+  if (!state.draft.photos.length) {
+    const confirmed = await requestConfirmation({
+      title: "Submit without photos?",
+      message: "Including photos is strongly recommended. Are you sure you want to submit without photos?",
+      confirmLabel: "Submit",
+    });
+    if (!confirmed) return;
   }
 
   const savedRoomNumber = state.draft.roomNumber;
@@ -580,6 +590,29 @@ function downloadTextFile() {
   downloadBlob(new Blob([buildExportText()], { type: "text/plain;charset=utf-8" }), `room-checks-${new Date().toISOString().slice(0, 10)}.txt`);
 }
 
+function csvCell(value) {
+  return `"${cleanTextCell(value).replaceAll('"', '""')}"`;
+}
+
+function buildCsvText() {
+  const rows = [["Building", "Room", "Category", "Sub-issue", "Description"]];
+  state.entries.forEach((entry) => {
+    entry.issues.forEach(({ issue, subcategory, description }) => {
+      rows.push([entry.building, entry.roomNumber, issue, subcategory, description]);
+    });
+  });
+  return rows.map((row) => row.map(csvCell).join(",")).join("\r\n");
+}
+
+function downloadCsvFile() {
+  if (!state.entries.length) {
+    showStatus("Save at least one room before downloading the CSV file.", true);
+    return;
+  }
+  const csv = `\uFEFF${buildCsvText()}`;
+  downloadBlob(new Blob([csv], { type: "text/csv;charset=utf-8" }), `room-checks-${new Date().toISOString().slice(0, 10)}.csv`);
+}
+
 function dataUrlToBlob(dataUrl) {
   const [metadata, data] = dataUrl.split(",");
   const mimeType = metadata.match(/data:([^;]+)/)?.[1] || "image/jpeg";
@@ -604,17 +637,78 @@ function downloadPhoto(photo) {
   downloadBlob(dataUrlToBlob(photo.dataUrl), photo.name);
 }
 
-async function downloadAllPhotos() {
+function crc32(bytes) {
+  let crc = 0xffffffff;
+  for (const byte of bytes) {
+    crc ^= byte;
+    for (let bit = 0; bit < 8; bit += 1) crc = (crc >>> 1) ^ (0xedb88320 & -(crc & 1));
+  }
+  return (crc ^ 0xffffffff) >>> 0;
+}
+
+function uint16(value) {
+  return new Uint8Array([value & 0xff, (value >>> 8) & 0xff]);
+}
+
+function uint32(value) {
+  return new Uint8Array([value & 0xff, (value >>> 8) & 0xff, (value >>> 16) & 0xff, (value >>> 24) & 0xff]);
+}
+
+function joinBytes(parts) {
+  const output = new Uint8Array(parts.reduce((total, part) => total + part.length, 0));
+  let offset = 0;
+  parts.forEach((part) => {
+    output.set(part, offset);
+    offset += part.length;
+  });
+  return output;
+}
+
+function dataUrlToBytes(dataUrl) {
+  const binary = atob(dataUrl.split(",")[1]);
+  return Uint8Array.from(binary, (character) => character.charCodeAt(0));
+}
+
+function createZip(files) {
+  const encoder = new TextEncoder();
+  const localParts = [];
+  const centralParts = [];
+  let offset = 0;
+
+  files.forEach(({ name, bytes }) => {
+    const nameBytes = encoder.encode(name);
+    const checksum = crc32(bytes);
+    const localHeader = joinBytes([
+      uint32(0x04034b50), uint16(20), uint16(0), uint16(0), uint16(0), uint16(0), uint32(checksum),
+      uint32(bytes.length), uint32(bytes.length), uint16(nameBytes.length), uint16(0), nameBytes,
+    ]);
+    localParts.push(localHeader, bytes);
+    const centralHeader = joinBytes([
+      uint32(0x02014b50), uint16(20), uint16(20), uint16(0), uint16(0), uint16(0), uint16(0), uint32(checksum),
+      uint32(bytes.length), uint32(bytes.length), uint16(nameBytes.length), uint16(0), uint16(0), uint16(0),
+      uint16(0), uint32(0), uint32(offset), nameBytes,
+    ]);
+    centralParts.push(centralHeader);
+    offset += localHeader.length + bytes.length;
+  });
+
+  const centralDirectory = joinBytes(centralParts);
+  const endRecord = joinBytes([
+    uint32(0x06054b50), uint16(0), uint16(0), uint16(files.length), uint16(files.length),
+    uint32(centralDirectory.length), uint32(offset), uint16(0),
+  ]);
+  return new Blob([...localParts, centralDirectory, endRecord], { type: "application/zip" });
+}
+
+function downloadAllPhotos() {
   const photos = state.entries.flatMap((entry) => entry.photos || []);
   if (!photos.length) {
     showStatus("There are no saved photos to download.", true);
     return;
   }
-  for (const photo of photos) {
-    downloadPhoto(photo);
-    await new Promise((resolve) => setTimeout(resolve, 250));
-  }
-  showStatus(`${photos.length} photo${photos.length === 1 ? "" : "s"} sent to your downloads.`);
+  const files = photos.map((photo) => ({ name: photo.name, bytes: dataUrlToBytes(photo.dataUrl) }));
+  downloadBlob(createZip(files), `room-check-photos-${new Date().toISOString().slice(0, 10)}.zip`);
+  showStatus(`${photos.length} photo${photos.length === 1 ? "" : "s"} saved in one ZIP file.`);
 }
 
 function escapeHtml(value) {
@@ -634,6 +728,7 @@ saveEntryButton.addEventListener("click", saveCurrentEntry);
 resetCurrentButton.addEventListener("click", confirmResetCurrentRoom);
 copyTextButton.addEventListener("click", copyExportText);
 downloadTextButton.addEventListener("click", downloadTextFile);
+downloadCsvButton.addEventListener("click", downloadCsvFile);
 downloadAllPhotosButton.addEventListener("click", downloadAllPhotos);
 clearEntriesButton.addEventListener("click", confirmClearSavedEntries);
 
