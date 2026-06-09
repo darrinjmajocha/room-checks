@@ -174,8 +174,7 @@ button:disabled { cursor: wait; opacity: 0.65; }
 .photo-issue-option { display: flex; align-items: center; gap: 0.65rem; border: 1px solid var(--line); border-radius: 0.75rem; padding: 0.75rem; font-weight: 800; cursor: pointer; }
 .photo-issue-option:has(input:checked) { border-color: var(--rit-orange); background: #fff4ed; }
 .photo-issue-option input { width: 1.2rem; height: 1.2rem; accent-color: var(--rit-orange); flex: 0 0 auto; }
-.copy-toast { position: fixed; left: 50%; bottom: max(1.5rem, env(safe-area-inset-bottom)); z-index: 50; transform: translate(-50%, 1rem); border-radius: 999px; padding: 0.75rem 1.2rem; background: #182230; color: white; font-weight: 900; box-shadow: var(--shadow); opacity: 0; transition: opacity 180ms ease, transform 180ms ease; }
-.copy-toast.visible { opacity: 1; transform: translate(-50%, 0); }
+.primary-button.secondary.copy-success { background: #d1fadf; border-color: #75c98d; color: #166534; }
 
 @media (max-width: 520px) {
   .export-actions { grid-template-columns: 1fr 1fr; }
