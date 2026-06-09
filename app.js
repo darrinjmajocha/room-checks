@@ -84,7 +84,6 @@ const state = {
 const buildingSelect = document.querySelector("#buildingSelect");
 const roomNumber = document.querySelector("#roomNumber");
 const issueCatalogEl = document.querySelector("#issueCatalog");
-const clearIssuesButton = document.querySelector("#clearIssuesButton");
 const saveEntryButton = document.querySelector("#saveEntryButton");
 const resetCurrentButton = document.querySelector("#resetCurrentButton");
 const copyTextButton = document.querySelector("#copyTextButton");
@@ -113,9 +112,8 @@ const photoIssueDialog = document.querySelector("#photoIssueDialog");
 const photoIssueOptions = document.querySelector("#photoIssueOptions");
 const savePhotoIssuesButton = document.querySelector("#savePhotoIssuesButton");
 const infoDialog = document.querySelector("#infoDialog");
-const copyToast = document.querySelector("#copyToast");
 let activePhotoIndex = null;
-let copyToastTimer = null;
+let copyButtonTimer = null;
 
 function defaultDraft() {
   return { building: buildings[0], roomNumber: "", issues: {}, customIssues: [], photos: [] };
@@ -552,14 +550,6 @@ function resetCurrentDraft(keepBuilding = false) {
   renderPhotos();
 }
 
-function clearIssueSelections() {
-  state.draft.issues = {};
-  state.draft.customIssues = [];
-  saveDraft();
-  renderIssueCatalog();
-  renderCustomIssues();
-}
-
 function renderSavedEntries() {
   const count = state.entries.length;
   const photos = state.entries.flatMap((entry) => entry.photos || []);
@@ -667,14 +657,15 @@ function buildExportText() {
   return rows.map((row) => row.map(cleanTextCell).join("\t")).join("\n");
 }
 
-function showCopyToast() {
-  clearTimeout(copyToastTimer);
-  copyToast.hidden = false;
-  requestAnimationFrame(() => copyToast.classList.add("visible"));
-  copyToastTimer = setTimeout(() => {
-    copyToast.classList.remove("visible");
-    setTimeout(() => { copyToast.hidden = true; }, 250);
-  }, 2200);
+function showCopyButtonSuccess() {
+  clearTimeout(copyButtonTimer);
+  copyTextButton.textContent = "Copied!";
+  copyTextButton.classList.add("copy-success");
+  copyButtonTimer = setTimeout(() => {
+    copyTextButton.textContent = "Copy text";
+    copyTextButton.classList.remove("copy-success");
+    copyButtonTimer = null;
+  }, 3000);
 }
 
 async function copyExportText() {
@@ -690,7 +681,7 @@ async function copyExportText() {
     exportText.select();
     document.execCommand("copy");
   }
-  showCopyToast();
+  showCopyButtonSuccess();
 }
 
 function downloadTextFile() {
@@ -833,7 +824,6 @@ photoInput.addEventListener("change", (event) => {
   event.target.value = "";
 });
 roomForm.addEventListener("submit", (event) => event.preventDefault());
-clearIssuesButton.addEventListener("click", clearIssueSelections);
 addCustomIssueButton.addEventListener("click", addCustomIssue);
 saveEntryButton.addEventListener("click", saveCurrentEntry);
 resetCurrentButton.addEventListener("click", confirmResetCurrentRoom);
