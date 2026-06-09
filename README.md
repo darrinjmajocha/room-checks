@@ -8,11 +8,12 @@ A mobile-friendly static web app for residence hall room checks. It can be hoste
 - Shows native expandable issue categories in descending alphabetical order.
 - Allows multiple sub-issues and a description for each selected item.
 - Adds multiple photos from a phone camera or photo library.
-- Labels saved photos in the top-left corner with the building and room number.
-- Renames photos as `building_room_#` and makes them available as separate downloads.
+- Labels saved photos in the top-left corner with the building, room number, and any issues linked to that photo.
+- Renames photos as `building_room_#`, supports individual downloads, and packages all photos into one iPhone-friendly ZIP download.
 - Saves submitted rooms locally in the browser.
-- Produces tab-separated text that can be copied into spreadsheet columns A–E.
-- Confirms before resetting the current draft or clearing all saved entries.
+- Produces tab-separated text that can be copied into spreadsheet columns A–E and also offers a CSV download.
+- Allows each draft photo to be linked to one or more selected issues before submission.
+- Confirms before submitting without photos, resetting the current draft, or clearing all saved entries.
 
 ## GitHub Pages hosting
 
@@ -32,18 +33,18 @@ The copyable text is tab-separated and contains these five columns:
 4. Sub-issue
 5. Description
 
-Each selected issue/sub-issue becomes its own line. Copy the text and paste it into cell A1 of Excel, Google Sheets, or another spreadsheet program. The tabs place each value in its own column. A `.txt` download of the same data is also available.
+Each selected issue/sub-issue becomes its own line. Copy the text and paste it into cell A1 of Excel, Google Sheets, or another spreadsheet program. The tabs place each value in its own column. A `.txt` download of the same data and a standard `.csv` download are both available.
 
 ## Photos
 
 Photos are resized for browser storage when selected. When a room is saved, the app:
 
-1. Adds the building name in the top-left corner.
-2. Adds the room number directly below the building name.
+1. Adds a larger, single-line `Building — Room` label in the top-left corner.
+2. Adds each issue linked with **Log Issue** on its own line underneath the room label.
 3. Renames each photo using `building_room_#`.
 4. Stores the labeled image separately from the tab-separated room data.
 
-The saved-photo section supports individual downloads and a **Download all photos** action. Some mobile browsers may ask for permission to allow multiple downloads.
+In the Attach Photos section, use **Log Issue** to associate one or more currently selected category/sub-issue pairs with each photo. This step is optional. The saved-photo section supports individual **Download** buttons and a **Download all photos as ZIP** action, which creates one ZIP file instead of triggering multiple downloads on iPhone.
 
 ## Local storage and privacy
 
