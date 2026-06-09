@@ -29,7 +29,26 @@
 
         <form id="roomForm" class="room-form">
           <label for="buildingSelect">Building</label>
-          <select id="buildingSelect" name="building" required></select>
+          <select id="buildingSelect" name="building" required>
+            <option value="Baker A">Baker A</option>
+            <option value="Baker B">Baker B</option>
+            <option value="Colby A">Colby A</option>
+            <option value="Colby B">Colby B</option>
+            <option value="Colby C">Colby C</option>
+            <option value="DSP">DSP</option>
+            <option value="Ellingson">Ellingson</option>
+            <option value="Fish A">Fish A</option>
+            <option value="Fish B">Fish B</option>
+            <option value="Fish C">Fish C</option>
+            <option value="Gleason">Gleason</option>
+            <option value="Gibson A">Gibson A</option>
+            <option value="Gibson B">Gibson B</option>
+            <option value="Peterson">Peterson</option>
+            <option value="Res Hall A">Res Hall A</option>
+            <option value="Res Hall B">Res Hall B</option>
+            <option value="Res Hall C">Res Hall C</option>
+            <option value="Sol Huemann">Sol Huemann</option>
+          </select>
 
           <label for="roomNumber">Room number</label>
           <input id="roomNumber" name="roomNumber" type="text" inputmode="text" autocomplete="off" placeholder="Example: 4020, 6067, 11009" required />
@@ -44,7 +63,465 @@
           </div>
           <button id="clearIssuesButton" class="ghost-button" type="button">Clear issue selections</button>
         </div>
-        <div id="issueCatalog" class="issue-catalog"></div>
+        <div id="issueCatalog" class="issue-catalog">
+          <details class="issue-card" data-issue="Water Leaks">
+            <summary class="issue-toggle">
+              <span class="issue-name">Water Leaks</span>
+              <span class="issue-summary">Tap to expand</span>
+            </summary>
+            <div class="subcategory-list">
+              <div class="subcategory-row" data-subcategory="Bathroom">
+                <label class="subcategory-check">
+                  <input type="checkbox" />
+                  <span>Bathroom</span>
+                </label>
+                <textarea rows="3" placeholder="Describe what needs attention..." hidden></textarea>
+              </div>
+              <div class="subcategory-row" data-subcategory="Ceiling">
+                <label class="subcategory-check">
+                  <input type="checkbox" />
+                  <span>Ceiling</span>
+                </label>
+                <textarea rows="3" placeholder="Describe what needs attention..." hidden></textarea>
+              </div>
+              <div class="subcategory-row" data-subcategory="Kitchen">
+                <label class="subcategory-check">
+                  <input type="checkbox" />
+                  <span>Kitchen</span>
+                </label>
+                <textarea rows="3" placeholder="Describe what needs attention..." hidden></textarea>
+              </div>
+              <div class="subcategory-row" data-subcategory="Sprinkler System">
+                <label class="subcategory-check">
+                  <input type="checkbox" />
+                  <span>Sprinkler System</span>
+                </label>
+                <textarea rows="3" placeholder="Describe what needs attention..." hidden></textarea>
+              </div>
+              <div class="subcategory-row" data-subcategory="Other">
+                <label class="subcategory-check">
+                  <input type="checkbox" />
+                  <span>Other</span>
+                </label>
+                <textarea rows="3" placeholder="Describe what needs attention..." hidden></textarea>
+              </div>
+            </div>
+          </details>
+          <details class="issue-card" data-issue="Structural Building Maintenance">
+            <summary class="issue-toggle">
+              <span class="issue-name">Structural Building Maintenance</span>
+              <span class="issue-summary">Tap to expand</span>
+            </summary>
+            <div class="subcategory-list">
+              <div class="subcategory-row" data-subcategory="Automated Accessible Door">
+                <label class="subcategory-check">
+                  <input type="checkbox" />
+                  <span>Automated Accessible Door</span>
+                </label>
+                <textarea rows="3" placeholder="Describe what needs attention..." hidden></textarea>
+              </div>
+              <div class="subcategory-row" data-subcategory="Ceiling">
+                <label class="subcategory-check">
+                  <input type="checkbox" />
+                  <span>Ceiling</span>
+                </label>
+                <textarea rows="3" placeholder="Describe what needs attention..." hidden></textarea>
+              </div>
+              <div class="subcategory-row" data-subcategory="Door">
+                <label class="subcategory-check">
+                  <input type="checkbox" />
+                  <span>Door</span>
+                </label>
+                <textarea rows="3" placeholder="Describe what needs attention..." hidden></textarea>
+              </div>
+              <div class="subcategory-row" data-subcategory="Flooring">
+                <label class="subcategory-check">
+                  <input type="checkbox" />
+                  <span>Flooring</span>
+                </label>
+                <textarea rows="3" placeholder="Describe what needs attention..." hidden></textarea>
+              </div>
+              <div class="subcategory-row" data-subcategory="Repair Bathroom Stall">
+                <label class="subcategory-check">
+                  <input type="checkbox" />
+                  <span>Repair Bathroom Stall</span>
+                </label>
+                <textarea rows="3" placeholder="Describe what needs attention..." hidden></textarea>
+              </div>
+              <div class="subcategory-row" data-subcategory="Repair Card Reader">
+                <label class="subcategory-check">
+                  <input type="checkbox" />
+                  <span>Repair Card Reader</span>
+                </label>
+                <textarea rows="3" placeholder="Describe what needs attention..." hidden></textarea>
+              </div>
+              <div class="subcategory-row" data-subcategory="Replace Mirror">
+                <label class="subcategory-check">
+                  <input type="checkbox" />
+                  <span>Replace Mirror</span>
+                </label>
+                <textarea rows="3" placeholder="Describe what needs attention..." hidden></textarea>
+              </div>
+              <div class="subcategory-row" data-subcategory="Wall">
+                <label class="subcategory-check">
+                  <input type="checkbox" />
+                  <span>Wall</span>
+                </label>
+                <textarea rows="3" placeholder="Describe what needs attention..." hidden></textarea>
+              </div>
+              <div class="subcategory-row" data-subcategory="Window/Screen">
+                <label class="subcategory-check">
+                  <input type="checkbox" />
+                  <span>Window/Screen</span>
+                </label>
+                <textarea rows="3" placeholder="Describe what needs attention..." hidden></textarea>
+              </div>
+              <div class="subcategory-row" data-subcategory="Other">
+                <label class="subcategory-check">
+                  <input type="checkbox" />
+                  <span>Other</span>
+                </label>
+                <textarea rows="3" placeholder="Describe what needs attention..." hidden></textarea>
+              </div>
+            </div>
+          </details>
+          <details class="issue-card" data-issue="Plumbing">
+            <summary class="issue-toggle">
+              <span class="issue-name">Plumbing</span>
+              <span class="issue-summary">Tap to expand</span>
+            </summary>
+            <div class="subcategory-list">
+              <div class="subcategory-row" data-subcategory="Clogged Drains">
+                <label class="subcategory-check">
+                  <input type="checkbox" />
+                  <span>Clogged Drains</span>
+                </label>
+                <textarea rows="3" placeholder="Describe what needs attention..." hidden></textarea>
+              </div>
+              <div class="subcategory-row" data-subcategory="Drinking Fountains">
+                <label class="subcategory-check">
+                  <input type="checkbox" />
+                  <span>Drinking Fountains</span>
+                </label>
+                <textarea rows="3" placeholder="Describe what needs attention..." hidden></textarea>
+              </div>
+              <div class="subcategory-row" data-subcategory="Showers">
+                <label class="subcategory-check">
+                  <input type="checkbox" />
+                  <span>Showers</span>
+                </label>
+                <textarea rows="3" placeholder="Describe what needs attention..." hidden></textarea>
+              </div>
+              <div class="subcategory-row" data-subcategory="Sink">
+                <label class="subcategory-check">
+                  <input type="checkbox" />
+                  <span>Sink</span>
+                </label>
+                <textarea rows="3" placeholder="Describe what needs attention..." hidden></textarea>
+              </div>
+              <div class="subcategory-row" data-subcategory="Toilet Clog">
+                <label class="subcategory-check">
+                  <input type="checkbox" />
+                  <span>Toilet Clog</span>
+                </label>
+                <textarea rows="3" placeholder="Describe what needs attention..." hidden></textarea>
+              </div>
+              <div class="subcategory-row" data-subcategory="Toilet/Urinal">
+                <label class="subcategory-check">
+                  <input type="checkbox" />
+                  <span>Toilet/Urinal</span>
+                </label>
+                <textarea rows="3" placeholder="Describe what needs attention..." hidden></textarea>
+              </div>
+              <div class="subcategory-row" data-subcategory="Water Temperature">
+                <label class="subcategory-check">
+                  <input type="checkbox" />
+                  <span>Water Temperature</span>
+                </label>
+                <textarea rows="3" placeholder="Describe what needs attention..." hidden></textarea>
+              </div>
+              <div class="subcategory-row" data-subcategory="Other">
+                <label class="subcategory-check">
+                  <input type="checkbox" />
+                  <span>Other</span>
+                </label>
+                <textarea rows="3" placeholder="Describe what needs attention..." hidden></textarea>
+              </div>
+            </div>
+          </details>
+          <details class="issue-card" data-issue="Pests">
+            <summary class="issue-toggle">
+              <span class="issue-name">Pests</span>
+              <span class="issue-summary">Tap to expand</span>
+            </summary>
+            <div class="subcategory-list">
+              <div class="subcategory-row" data-subcategory="Ants">
+                <label class="subcategory-check">
+                  <input type="checkbox" />
+                  <span>Ants</span>
+                </label>
+                <textarea rows="3" placeholder="Describe what needs attention..." hidden></textarea>
+              </div>
+              <div class="subcategory-row" data-subcategory="Bees">
+                <label class="subcategory-check">
+                  <input type="checkbox" />
+                  <span>Bees</span>
+                </label>
+                <textarea rows="3" placeholder="Describe what needs attention..." hidden></textarea>
+              </div>
+              <div class="subcategory-row" data-subcategory="Mice">
+                <label class="subcategory-check">
+                  <input type="checkbox" />
+                  <span>Mice</span>
+                </label>
+                <textarea rows="3" placeholder="Describe what needs attention..." hidden></textarea>
+              </div>
+              <div class="subcategory-row" data-subcategory="Other">
+                <label class="subcategory-check">
+                  <input type="checkbox" />
+                  <span>Other</span>
+                </label>
+                <textarea rows="3" placeholder="Describe what needs attention..." hidden></textarea>
+              </div>
+            </div>
+          </details>
+          <details class="issue-card" data-issue="Lights">
+            <summary class="issue-toggle">
+              <span class="issue-name">Lights</span>
+              <span class="issue-summary">Tap to expand</span>
+            </summary>
+            <div class="subcategory-list">
+              <div class="subcategory-row" data-subcategory="Exterior Building Lighting">
+                <label class="subcategory-check">
+                  <input type="checkbox" />
+                  <span>Exterior Building Lighting</span>
+                </label>
+                <textarea rows="3" placeholder="Describe what needs attention..." hidden></textarea>
+              </div>
+              <div class="subcategory-row" data-subcategory="Lighting Repair-Inside">
+                <label class="subcategory-check">
+                  <input type="checkbox" />
+                  <span>Lighting Repair-Inside</span>
+                </label>
+                <textarea rows="3" placeholder="Describe what needs attention..." hidden></textarea>
+              </div>
+              <div class="subcategory-row" data-subcategory="No Power">
+                <label class="subcategory-check">
+                  <input type="checkbox" />
+                  <span>No Power</span>
+                </label>
+                <textarea rows="3" placeholder="Describe what needs attention..." hidden></textarea>
+              </div>
+              <div class="subcategory-row" data-subcategory="Outlet/Switch Cover Repair">
+                <label class="subcategory-check">
+                  <input type="checkbox" />
+                  <span>Outlet/Switch Cover Repair</span>
+                </label>
+                <textarea rows="3" placeholder="Describe what needs attention..." hidden></textarea>
+              </div>
+              <div class="subcategory-row" data-subcategory="Other">
+                <label class="subcategory-check">
+                  <input type="checkbox" />
+                  <span>Other</span>
+                </label>
+                <textarea rows="3" placeholder="Describe what needs attention..." hidden></textarea>
+              </div>
+            </div>
+          </details>
+          <details class="issue-card" data-issue="Keys/Locks">
+            <summary class="issue-toggle">
+              <span class="issue-name">Keys/Locks</span>
+              <span class="issue-summary">Tap to expand</span>
+            </summary>
+            <div class="subcategory-list">
+              <div class="subcategory-row" data-subcategory="Change Lock">
+                <label class="subcategory-check">
+                  <input type="checkbox" />
+                  <span>Change Lock</span>
+                </label>
+                <textarea rows="3" placeholder="Describe what needs attention..." hidden></textarea>
+              </div>
+              <div class="subcategory-row" data-subcategory="Damaged/Broken Lock">
+                <label class="subcategory-check">
+                  <input type="checkbox" />
+                  <span>Damaged/Broken Lock</span>
+                </label>
+                <textarea rows="3" placeholder="Describe what needs attention..." hidden></textarea>
+              </div>
+            </div>
+          </details>
+          <details class="issue-card" data-issue="Heating/Cooling/Ventilation">
+            <summary class="issue-toggle">
+              <span class="issue-name">Heating/Cooling/Ventilation</span>
+              <span class="issue-summary">Tap to expand</span>
+            </summary>
+            <div class="subcategory-list">
+              <div class="subcategory-row" data-subcategory="Controls">
+                <label class="subcategory-check">
+                  <input type="checkbox" />
+                  <span>Controls</span>
+                </label>
+                <textarea rows="3" placeholder="Describe what needs attention..." hidden></textarea>
+              </div>
+              <div class="subcategory-row" data-subcategory="General Repair">
+                <label class="subcategory-check">
+                  <input type="checkbox" />
+                  <span>General Repair</span>
+                </label>
+                <textarea rows="3" placeholder="Describe what needs attention..." hidden></textarea>
+              </div>
+              <div class="subcategory-row" data-subcategory="Noise">
+                <label class="subcategory-check">
+                  <input type="checkbox" />
+                  <span>Noise</span>
+                </label>
+                <textarea rows="3" placeholder="Describe what needs attention..." hidden></textarea>
+              </div>
+              <div class="subcategory-row" data-subcategory="Steam">
+                <label class="subcategory-check">
+                  <input type="checkbox" />
+                  <span>Steam</span>
+                </label>
+                <textarea rows="3" placeholder="Describe what needs attention..." hidden></textarea>
+              </div>
+              <div class="subcategory-row" data-subcategory="Too Hot">
+                <label class="subcategory-check">
+                  <input type="checkbox" />
+                  <span>Too Hot</span>
+                </label>
+                <textarea rows="3" placeholder="Describe what needs attention..." hidden></textarea>
+              </div>
+              <div class="subcategory-row" data-subcategory="Too Cold">
+                <label class="subcategory-check">
+                  <input type="checkbox" />
+                  <span>Too Cold</span>
+                </label>
+                <textarea rows="3" placeholder="Describe what needs attention..." hidden></textarea>
+              </div>
+              <div class="subcategory-row" data-subcategory="Ventilation">
+                <label class="subcategory-check">
+                  <input type="checkbox" />
+                  <span>Ventilation</span>
+                </label>
+                <textarea rows="3" placeholder="Describe what needs attention..." hidden></textarea>
+              </div>
+              <div class="subcategory-row" data-subcategory="Other">
+                <label class="subcategory-check">
+                  <input type="checkbox" />
+                  <span>Other</span>
+                </label>
+                <textarea rows="3" placeholder="Describe what needs attention..." hidden></textarea>
+              </div>
+            </div>
+          </details>
+          <details class="issue-card" data-issue="Elevator">
+            <summary class="issue-toggle">
+              <span class="issue-name">Elevator</span>
+              <span class="issue-summary">Tap to expand</span>
+            </summary>
+            <div class="subcategory-list">
+              <div class="subcategory-row" data-subcategory="Button Repair">
+                <label class="subcategory-check">
+                  <input type="checkbox" />
+                  <span>Button Repair</span>
+                </label>
+                <textarea rows="3" placeholder="Describe what needs attention..." hidden></textarea>
+              </div>
+              <div class="subcategory-row" data-subcategory="Not Responding">
+                <label class="subcategory-check">
+                  <input type="checkbox" />
+                  <span>Not Responding</span>
+                </label>
+                <textarea rows="3" placeholder="Describe what needs attention..." hidden></textarea>
+              </div>
+              <div class="subcategory-row" data-subcategory="Other">
+                <label class="subcategory-check">
+                  <input type="checkbox" />
+                  <span>Other</span>
+                </label>
+                <textarea rows="3" placeholder="Describe what needs attention..." hidden></textarea>
+              </div>
+            </div>
+          </details>
+          <details class="issue-card" data-issue="Cleaning">
+            <summary class="issue-toggle">
+              <span class="issue-name">Cleaning</span>
+              <span class="issue-summary">Tap to expand</span>
+            </summary>
+            <div class="subcategory-list">
+              <div class="subcategory-row" data-subcategory="Bathroom Refresh">
+                <label class="subcategory-check">
+                  <input type="checkbox" />
+                  <span>Bathroom Refresh</span>
+                </label>
+                <textarea rows="3" placeholder="Describe what needs attention..." hidden></textarea>
+              </div>
+              <div class="subcategory-row" data-subcategory="Clean or Shovel Entry Ways">
+                <label class="subcategory-check">
+                  <input type="checkbox" />
+                  <span>Clean or Shovel Entry Ways</span>
+                </label>
+                <textarea rows="3" placeholder="Describe what needs attention..." hidden></textarea>
+              </div>
+              <div class="subcategory-row" data-subcategory="Garbage Removal">
+                <label class="subcategory-check">
+                  <input type="checkbox" />
+                  <span>Garbage Removal</span>
+                </label>
+                <textarea rows="3" placeholder="Describe what needs attention..." hidden></textarea>
+              </div>
+              <div class="subcategory-row" data-subcategory="Garbage/Recycling Bins Needed">
+                <label class="subcategory-check">
+                  <input type="checkbox" />
+                  <span>Garbage/Recycling Bins Needed</span>
+                </label>
+                <textarea rows="3" placeholder="Describe what needs attention..." hidden></textarea>
+              </div>
+              <div class="subcategory-row" data-subcategory="General Cleaning">
+                <label class="subcategory-check">
+                  <input type="checkbox" />
+                  <span>General Cleaning</span>
+                </label>
+                <textarea rows="3" placeholder="Describe what needs attention..." hidden></textarea>
+              </div>
+              <div class="subcategory-row" data-subcategory="Inside Vandalism">
+                <label class="subcategory-check">
+                  <input type="checkbox" />
+                  <span>Inside Vandalism</span>
+                </label>
+                <textarea rows="3" placeholder="Describe what needs attention..." hidden></textarea>
+              </div>
+              <div class="subcategory-row" data-subcategory="Mold">
+                <label class="subcategory-check">
+                  <input type="checkbox" />
+                  <span>Mold</span>
+                </label>
+                <textarea rows="3" placeholder="Describe what needs attention..." hidden></textarea>
+              </div>
+              <div class="subcategory-row" data-subcategory="Replace Shower Curtain">
+                <label class="subcategory-check">
+                  <input type="checkbox" />
+                  <span>Replace Shower Curtain</span>
+                </label>
+                <textarea rows="3" placeholder="Describe what needs attention..." hidden></textarea>
+              </div>
+              <div class="subcategory-row" data-subcategory="Spill or Glass Cleanup">
+                <label class="subcategory-check">
+                  <input type="checkbox" />
+                  <span>Spill or Glass Cleanup</span>
+                </label>
+                <textarea rows="3" placeholder="Describe what needs attention..." hidden></textarea>
+              </div>
+              <div class="subcategory-row" data-subcategory="Other">
+                <label class="subcategory-check">
+                  <input type="checkbox" />
+                  <span>Other</span>
+                </label>
+                <textarea rows="3" placeholder="Describe what needs attention..." hidden></textarea>
+              </div>
+            </div>
+          </details>
+        </div>
 
         <div class="custom-issues" aria-labelledby="custom-issues-heading">
           <div class="section-heading compact-heading">
@@ -65,7 +542,7 @@
             <h2 id="photos-heading">Attach photos</h2>
           </div>
         </div>
-        <p class="hint">Photos stay in this browser and are included in the CSV export as data links.</p>
+        <p class="hint">Photos stay on this device. When the room is saved, each photo is labeled with the building and room number and renamed automatically.</p>
         <label class="file-drop" for="photoInput">
           <span>Tap to add photos</span>
           <small>Use camera or photo library. Add as many as needed.</small>
@@ -75,7 +552,7 @@
       </section>
 
       <section class="actions-bar" aria-label="Entry actions">
-        <button id="saveEntryButton" class="primary-button" type="button">OK — save room and start next</button>
+        <button id="saveEntryButton" class="primary-button" type="button">OK — save room and continue</button>
         <button id="resetCurrentButton" class="ghost-button" type="button">Reset current room</button>
         <p id="actionStatus" class="action-status" role="status" aria-live="polite"></p>
       </section>
@@ -84,15 +561,32 @@
         <div class="section-heading">
           <div>
             <p class="eyebrow">Saved locally</p>
-            <h2 id="saved-heading">Entries ready for CSV</h2>
+            <h2 id="saved-heading">Collected room data</h2>
           </div>
           <span id="entryCount" class="count-pill">0 entries</span>
         </div>
+        <p class="hint">The tab-separated text below pastes into spreadsheet columns A–E: Building, Room, Category, Sub-issue, and Description.</p>
+        <label class="export-label" for="exportText">Copyable room-check text</label>
+        <textarea id="exportText" class="export-text" rows="10" readonly placeholder="Saved room data will appear here."></textarea>
         <div class="export-actions">
-          <button id="downloadCsvButton" class="primary-button secondary" type="button">Download CSV</button>
+          <button id="copyTextButton" class="primary-button secondary" type="button">Copy text</button>
+          <button id="downloadTextButton" class="ghost-button" type="button">Download text file</button>
           <button id="clearEntriesButton" class="danger-button" type="button">Clear saved entries</button>
         </div>
         <div id="savedEntries" class="saved-entries"></div>
+      </section>
+
+      <section class="panel" aria-labelledby="saved-photos-heading">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Saved separately</p>
+            <h2 id="saved-photos-heading">Labeled photos</h2>
+          </div>
+          <span id="photoCount" class="count-pill">0 photos</span>
+        </div>
+        <p class="hint">Download photos individually, or use “Download all photos.” Mobile browsers may ask you to allow multiple downloads.</p>
+        <button id="downloadAllPhotosButton" class="primary-button secondary" type="button">Download all photos</button>
+        <div id="savedPhotos" class="saved-photo-grid"></div>
       </section>
     </main>
 
@@ -106,26 +600,6 @@
         </div>
       </form>
     </dialog>
-
-    <template id="issueTemplate">
-      <article class="issue-card">
-        <button class="issue-toggle" type="button" aria-expanded="false">
-          <span class="issue-name"></span>
-          <span class="issue-summary"></span>
-        </button>
-        <div class="subcategory-list" hidden></div>
-      </article>
-    </template>
-
-    <template id="subcategoryTemplate">
-      <div class="subcategory-row">
-        <label class="subcategory-check">
-          <input type="checkbox" />
-          <span></span>
-        </label>
-        <textarea rows="3" placeholder="Describe what needs attention..." hidden></textarea>
-      </div>
-    </template>
 
     <template id="customIssueTemplate">
       <div class="custom-issue-row">
@@ -141,7 +615,6 @@
       </div>
     </template>
 
-    <script src="app.js"></script>
-    <script src="app.js" type="module"></script>
+    <script src="app.js" defer></script>
   </body>
 </html>
