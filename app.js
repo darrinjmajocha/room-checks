@@ -1,3 +1,5 @@
+import { collectDraftIssues, sortCategoriesDescending } from "./room-checks-core.mjs";
+
 const STORAGE_KEY = "rit-room-checks-v1";
 const DRAFT_KEY = "rit-room-checks-draft-v1";
 
@@ -87,12 +89,7 @@ const issueCatalogEl = document.querySelector("#issueCatalog");
 const clearIssuesButton = document.querySelector("#clearIssuesButton");
 const saveEntryButton = document.querySelector("#saveEntryButton");
 const resetCurrentButton = document.querySelector("#resetCurrentButton");
-const copyTextButton = document.querySelector("#copyTextButton");
-const downloadTextButton = document.querySelector("#downloadTextButton");
-const exportText = document.querySelector("#exportText");
-const downloadAllPhotosButton = document.querySelector("#downloadAllPhotosButton");
-const savedPhotos = document.querySelector("#savedPhotos");
-const photoCount = document.querySelector("#photoCount");
+const downloadCsvButton = document.querySelector("#downloadCsvButton");
 const clearEntriesButton = document.querySelector("#clearEntriesButton");
 const photoInput = document.querySelector("#photoInput");
 const photoPreview = document.querySelector("#photoPreview");
@@ -157,33 +154,36 @@ function showStatus(message, isError = false) {
 }
 
 function renderBuildings() {
-  const savedBuilding = state.draft.building || buildings[0];
-  if ([...buildingSelect.options].some((option) => option.value === savedBuilding)) {
-    buildingSelect.value = savedBuilding;
-  }
+  buildingSelect.innerHTML = buildings.map((building) => `<option value="${escapeHtml(building)}">${escapeHtml(building)}</option>`).join("");
+  buildingSelect.value = state.draft.building || buildings[0];
   roomNumber.value = state.draft.roomNumber || "";
 }
 
 function renderIssueCatalog() {
-  const cards = [...issueCatalogEl.querySelectorAll(".issue-card[data-issue]")];
-  cards.sort((cardA, cardB) => cardB.dataset.issue.localeCompare(cardA.dataset.issue));
-  cards.forEach((card) => issueCatalogEl.append(card));
+  issueCatalogEl.innerHTML = "";
+  const issueTemplate = document.querySelector("#issueTemplate");
+  const subcategoryTemplate = document.querySelector("#subcategoryTemplate");
 
-  cards.forEach((issueNode) => {
-    const issue = issueNode.dataset.issue;
+  const categories = sortCategoriesDescending(issueCatalog);
+
+  categories.forEach(([issue, subcategories]) => {
+    const issueNode = issueTemplate.content.firstElementChild.cloneNode(true);
+    const toggle = issueNode.querySelector(".issue-toggle");
+    const name = issueNode.querySelector(".issue-name");
     const summary = issueNode.querySelector(".issue-summary");
-    issueNode.open = false;
+    const list = issueNode.querySelector(".subcategory-list");
+    name.textContent = issue;
 
-    issueNode.querySelectorAll(".subcategory-row[data-subcategory]").forEach((row) => {
-      const subcategory = row.dataset.subcategory;
-      const checkbox = row.querySelector('input[type="checkbox"]');
+    subcategories.forEach((subcategory) => {
+      const row = subcategoryTemplate.content.firstElementChild.cloneNode(true);
+      const checkbox = row.querySelector("input");
+      const label = row.querySelector("span");
       const textarea = row.querySelector("textarea");
+      label.textContent = subcategory;
       checkbox.checked = Object.prototype.hasOwnProperty.call(state.draft.issues?.[issue] || {}, subcategory);
       textarea.value = state.draft.issues?.[issue]?.[subcategory] || "";
       textarea.hidden = !checkbox.checked;
 
-      if (row.dataset.bound === "true") return;
-      row.dataset.bound = "true";
       checkbox.addEventListener("change", () => {
         if (!state.draft.issues[issue]) state.draft.issues[issue] = {};
         textarea.hidden = !checkbox.checked;
@@ -202,28 +202,35 @@ function renderIssueCatalog() {
         state.draft.issues[issue][subcategory] = textarea.value.trim();
         saveDraft();
       });
+
+      list.append(row);
     });
 
-    if (issueNode.dataset.bound !== "true") {
-      issueNode.dataset.bound = "true";
-      issueNode.addEventListener("toggle", () => updateIssueSummary(issueNode, issue));
-    }
-    summary.textContent = "Tap to expand";
+    toggle.addEventListener("click", () => {
+      const willExpand = toggle.getAttribute("aria-expanded") !== "true";
+      toggle.setAttribute("aria-expanded", String(willExpand));
+      list.hidden = !willExpand;
+      updateIssueSummary(issueNode, issue);
+    });
+
+    toggle.setAttribute("aria-expanded", "false");
+    list.hidden = true;
     updateIssueSummary(issueNode, issue);
+    issueCatalogEl.append(issueNode);
   });
 }
 
 function updateIssueSummary(issueNode, issue) {
   const selectedCount = Object.keys(state.draft.issues?.[issue] || {}).length;
+  const isExpanded = issueNode.querySelector(".issue-toggle").getAttribute("aria-expanded") === "true";
   issueNode.querySelector(".issue-summary").textContent = selectedCount
     ? `${selectedCount} selected`
-    : issueNode.open
+    : isExpanded
       ? "Tap to collapse"
       : "Tap to expand";
 }
 
 async function handlePhotos(files) {
-  if (!files.length) return;
   try {
     const photos = await Promise.all([...files].map(fileToPhoto));
     state.draft.photos.push(...photos);
@@ -233,82 +240,20 @@ async function handlePhotos(files) {
       return;
     }
     renderPhotos();
-    showStatus(`${photos.length} photo${photos.length === 1 ? "" : "s"} added. Labels will be applied when the room is saved.`);
+    showStatus(`${photos.length} photo${photos.length === 1 ? "" : "s"} added.`);
   } catch (error) {
     console.error("Could not read selected photos", error);
     showStatus("The selected photos could not be read.", true);
   }
 }
 
-async function fileToPhoto(file) {
-  const dataUrl = await readFileAsDataUrl(file);
-  const image = await loadImage(dataUrl);
-  const resizedDataUrl = drawResizedImage(image, 1800).toDataURL("image/jpeg", 0.86);
-  return { originalName: file.name, dataUrl: resizedDataUrl };
-}
-
-function readFileAsDataUrl(file) {
+function fileToPhoto(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
-    reader.onload = () => resolve(reader.result);
+    reader.onload = () => resolve({ name: file.name, type: file.type, dataUrl: reader.result });
     reader.onerror = reject;
     reader.readAsDataURL(file);
   });
-}
-
-function loadImage(dataUrl) {
-  return new Promise((resolve, reject) => {
-    const image = new Image();
-    image.onload = () => resolve(image);
-    image.onerror = reject;
-    image.src = dataUrl;
-  });
-}
-
-function drawResizedImage(image, maxDimension) {
-  const scale = Math.min(1, maxDimension / Math.max(image.naturalWidth, image.naturalHeight));
-  const canvas = document.createElement("canvas");
-  canvas.width = Math.max(1, Math.round(image.naturalWidth * scale));
-  canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
-  canvas.getContext("2d").drawImage(image, 0, 0, canvas.width, canvas.height);
-  return canvas;
-}
-
-function safeFilenamePart(value) {
-  return String(value).trim().replace(/[^a-z0-9_-]+/gi, "_").replace(/^_+|_+$/g, "") || "unknown";
-}
-
-async function labelPhoto(photo, building, room, index) {
-  const image = await loadImage(photo.dataUrl);
-  const canvas = drawResizedImage(image, 1800);
-  const width = canvas.width;
-  const height = canvas.height;
-  const context = canvas.getContext("2d");
-
-  const fontSize = Math.max(24, Math.round(width * 0.035));
-  const padding = Math.max(14, Math.round(fontSize * 0.55));
-  const lineHeight = Math.round(fontSize * 1.2);
-  context.font = `700 ${fontSize}px system-ui, sans-serif`;
-  const boxWidth = Math.min(
-    width,
-    Math.ceil(Math.max(context.measureText(building).width, context.measureText(room).width) + padding * 2),
-  );
-  const boxHeight = lineHeight * 2 + padding * 1.5;
-  context.fillStyle = "rgba(0, 0, 0, 0.72)";
-  context.fillRect(0, 0, boxWidth, boxHeight);
-  context.fillStyle = "#ffffff";
-  context.textBaseline = "top";
-  context.fillText(building, padding, padding);
-  context.fillText(room, padding, padding + lineHeight);
-
-  return {
-    name: `${safeFilenamePart(building)}_${safeFilenamePart(room)}_${index + 1}.jpg`,
-    dataUrl: canvas.toDataURL("image/jpeg", 0.86),
-  };
-}
-
-async function labelRoomPhotos(photos, building, room) {
-  return Promise.all(photos.map((photo, index) => labelPhoto(photo, building, room, index)));
 }
 
 function renderCustomIssues() {
@@ -355,7 +300,7 @@ function renderPhotos() {
   state.draft.photos.forEach((photo, index) => {
     const card = document.createElement("div");
     card.className = "photo-card";
-    card.innerHTML = `<img src="${photo.dataUrl}" alt="${escapeHtml(photo.originalName || photo.name || "Selected photo")}"><button class="ghost-button" type="button">Remove</button>`;
+    card.innerHTML = `<img src="${photo.dataUrl}" alt="${escapeHtml(photo.name)}"><button class="ghost-button" type="button">Remove</button>`;
     card.querySelector("button").addEventListener("click", () => {
       state.draft.photos.splice(index, 1);
       saveDraft();
@@ -373,7 +318,7 @@ function createEntryId() {
   return globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
 
-async function saveCurrentEntry() {
+function saveCurrentEntry() {
   showStatus("");
   saveDraft();
   const issues = collectIssues();
@@ -388,25 +333,13 @@ async function saveCurrentEntry() {
   }
 
   const savedRoomNumber = state.draft.roomNumber;
-  saveEntryButton.disabled = true;
-  showStatus(state.draft.photos.length ? "Labeling and saving photos…" : "Saving room…");
-  let labeledPhotos;
-  try {
-    labeledPhotos = await labelRoomPhotos(state.draft.photos, state.draft.building, savedRoomNumber);
-  } catch (error) {
-    console.error("Could not label room photos", error);
-    showStatus("The photos could not be labeled. Remove the affected photo and try again.", true);
-    saveEntryButton.disabled = false;
-    return;
-  }
-
   const entry = {
     id: createEntryId(),
     createdAt: new Date().toISOString(),
     building: state.draft.building,
     roomNumber: savedRoomNumber,
     issues,
-    photos: labeledPhotos,
+    photos: [...state.draft.photos],
   };
   state.entries.push(entry);
 
@@ -421,13 +354,11 @@ async function saveCurrentEntry() {
     state.entries.pop();
     writeStoredJson(DRAFT_KEY, state.draft);
     showStatus("This room could not be saved. Browser storage may be full; remove some photos and try again.", true);
-    saveEntryButton.disabled = false;
     return;
   }
 
   resetCurrentDraft(true);
-  saveEntryButton.disabled = false;
-  showStatus(`Room ${savedRoomNumber} saved. Text and labeled photos are ready below.`);
+  showStatus(`Room ${savedRoomNumber} saved. Ready for the next room.`);
   roomNumber.focus();
 }
 
@@ -451,48 +382,22 @@ function clearIssueSelections() {
 
 function renderSavedEntries() {
   const count = state.entries.length;
-  const photos = state.entries.flatMap((entry) => entry.photos || []);
   entryCount.textContent = `${count} ${count === 1 ? "entry" : "entries"}`;
-  photoCount.textContent = `${photos.length} ${photos.length === 1 ? "photo" : "photos"}`;
-  exportText.value = count ? buildExportText() : "";
   savedEntries.innerHTML = "";
-  savedPhotos.innerHTML = "";
-
   if (!count) {
     savedEntries.innerHTML = '<p class="hint">No entries saved yet.</p>';
-  } else {
-    state.entries.slice().reverse().forEach((entry) => {
-      const entryEl = document.createElement("article");
-      entryEl.className = "saved-entry";
-      entryEl.innerHTML = `
-        <h3>${escapeHtml(entry.building)} — ${escapeHtml(entry.roomNumber)}</h3>
-        <p>${entry.issues.length} issue rows • ${(entry.photos || []).length} photo(s)</p>
-        <p>${entry.issues.map(({ issue, subcategory }) => `${escapeHtml(issue)}: ${escapeHtml(subcategory)}`).join("; ")}</p>
-      `;
-      savedEntries.append(entryEl);
-    });
-  }
-
-  if (!photos.length) {
-    savedPhotos.innerHTML = '<p class="hint">No labeled photos saved yet.</p>';
     return;
   }
 
-  photos.forEach((photo) => {
-    const card = document.createElement("article");
-    card.className = "saved-photo-card";
-    const image = document.createElement("img");
-    image.src = photo.dataUrl;
-    image.alt = photo.name;
-    const name = document.createElement("p");
-    name.textContent = photo.name;
-    const button = document.createElement("button");
-    button.className = "ghost-button";
-    button.type = "button";
-    button.textContent = "Download photo";
-    button.addEventListener("click", () => downloadPhoto(photo));
-    card.append(image, name, button);
-    savedPhotos.append(card);
+  state.entries.slice().reverse().forEach((entry) => {
+    const entryEl = document.createElement("article");
+    entryEl.className = "saved-entry";
+    entryEl.innerHTML = `
+      <h3>${escapeHtml(entry.building)} — ${escapeHtml(entry.roomNumber)}</h3>
+      <p>${entry.issues.length} issue rows • ${entry.photos.length} photo(s)</p>
+      <p>${entry.issues.map(({ issue, subcategory }) => `${escapeHtml(issue)}: ${escapeHtml(subcategory)}`).join("; ")}</p>
+    `;
+    savedEntries.append(entryEl);
   });
 }
 
@@ -527,7 +432,7 @@ async function confirmResetCurrentRoom() {
 async function confirmClearSavedEntries() {
   const confirmed = await requestConfirmation({
     title: "Clear all saved entries?",
-    message: "This will permanently remove every saved room entry from this device. Copy or download the text and photos first if you need a copy.",
+    message: "This will permanently remove every saved room entry from this device. Download the CSV first if you need a copy.",
     confirmLabel: "Clear saved entries",
   });
   if (!confirmed) return;
@@ -542,79 +447,38 @@ async function confirmClearSavedEntries() {
   showStatus("All saved entries cleared.");
 }
 
-function cleanTextCell(value) {
-  return String(value ?? "").replace(/[\t\r\n]+/g, " ").trim();
-}
-
-function buildExportText() {
-  const rows = [["Building", "Room", "Category", "Sub-issue", "Description"]];
+function downloadCsv() {
+  if (!state.entries.length) {
+    alert("No saved entries to export yet.");
+    return;
+  }
+  const rows = [["Building", "Room Number", "Issue", "Subcategory", "Description", "Photos", "Created At"]];
   state.entries.forEach((entry) => {
-    entry.issues.forEach(({ issue, subcategory, description }) => {
-      rows.push([entry.building, entry.roomNumber, issue, subcategory, description]);
+    entry.issues.forEach(({ issue, subcategory, description }, issueIndex) => {
+      rows.push([
+        entry.building,
+        entry.roomNumber,
+        issue,
+        subcategory,
+        description,
+        issueIndex === 0 ? entry.photos.map((photo) => `${photo.name}: ${photo.dataUrl}`).join(" | ") : "",
+        entry.createdAt,
+      ]);
     });
   });
-  return rows.map((row) => row.map(cleanTextCell).join("\t")).join("\n");
-}
 
-async function copyExportText() {
-  if (!state.entries.length) {
-    showStatus("Save at least one room before copying the text.", true);
-    return;
-  }
-  const text = buildExportText();
-  try {
-    await navigator.clipboard.writeText(text);
-  } catch {
-    exportText.focus();
-    exportText.select();
-    document.execCommand("copy");
-  }
-  showStatus("Room-check text copied. Paste it into cell A1 of your spreadsheet.");
-}
-
-function downloadTextFile() {
-  if (!state.entries.length) {
-    showStatus("Save at least one room before downloading the text file.", true);
-    return;
-  }
-  downloadBlob(new Blob([buildExportText()], { type: "text/plain;charset=utf-8" }), `room-checks-${new Date().toISOString().slice(0, 10)}.txt`);
-}
-
-function dataUrlToBlob(dataUrl) {
-  const [metadata, data] = dataUrl.split(",");
-  const mimeType = metadata.match(/data:([^;]+)/)?.[1] || "image/jpeg";
-  const binary = atob(data);
-  const bytes = new Uint8Array(binary.length);
-  for (let index = 0; index < binary.length; index += 1) bytes[index] = binary.charCodeAt(index);
-  return new Blob([bytes], { type: mimeType });
-}
-
-function downloadBlob(blob, filename) {
+  const csv = rows.map((row) => row.map(csvCell).join(",")).join("\n");
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
-  link.download = filename;
-  document.body.append(link);
+  link.download = `room-checks-${new Date().toISOString().slice(0, 10)}.csv`;
   link.click();
-  link.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  URL.revokeObjectURL(url);
 }
 
-function downloadPhoto(photo) {
-  downloadBlob(dataUrlToBlob(photo.dataUrl), photo.name);
-}
-
-async function downloadAllPhotos() {
-  const photos = state.entries.flatMap((entry) => entry.photos || []);
-  if (!photos.length) {
-    showStatus("There are no saved photos to download.", true);
-    return;
-  }
-  for (const photo of photos) {
-    downloadPhoto(photo);
-    await new Promise((resolve) => setTimeout(resolve, 250));
-  }
-  showStatus(`${photos.length} photo${photos.length === 1 ? "" : "s"} sent to your downloads.`);
+function csvCell(value) {
+  return `"${String(value ?? "").replaceAll('"', '""')}"`;
 }
 
 function escapeHtml(value) {
@@ -632,9 +496,7 @@ clearIssuesButton.addEventListener("click", clearIssueSelections);
 addCustomIssueButton.addEventListener("click", addCustomIssue);
 saveEntryButton.addEventListener("click", saveCurrentEntry);
 resetCurrentButton.addEventListener("click", confirmResetCurrentRoom);
-copyTextButton.addEventListener("click", copyExportText);
-downloadTextButton.addEventListener("click", downloadTextFile);
-downloadAllPhotosButton.addEventListener("click", downloadAllPhotos);
+downloadCsvButton.addEventListener("click", downloadCsv);
 clearEntriesButton.addEventListener("click", confirmClearSavedEntries);
 
 window.addEventListener("beforeinstallprompt", (event) => {
@@ -651,18 +513,9 @@ installButton.addEventListener("click", async () => {
   installButton.hidden = true;
 });
 
-async function removeLegacyOfflineCache() {
-  if ("serviceWorker" in navigator) {
-    const registrations = await navigator.serviceWorker.getRegistrations();
-    await Promise.all(registrations.map((registration) => registration.unregister()));
-  }
-  if ("caches" in globalThis) {
-    const cacheNames = await caches.keys();
-    await Promise.all(cacheNames.filter((name) => name.startsWith("room-checks-")).map((name) => caches.delete(name)));
-  }
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("service-worker.js");
 }
-
-removeLegacyOfflineCache().catch((error) => console.warn("Could not remove the legacy offline cache", error));
 
 renderBuildings();
 renderIssueCatalog();

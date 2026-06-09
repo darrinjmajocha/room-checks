@@ -91,9 +91,7 @@ textarea { margin-top: 0.75rem; resize: vertical; }
   justify-content: space-between;
   gap: 1rem;
 }
-.issue-card[open] > .issue-toggle { background: #fff4ed; }
-.issue-toggle { list-style: none; cursor: pointer; }
-.issue-toggle::-webkit-details-marker { display: none; }
+.issue-toggle[aria-expanded="true"] { background: #fff4ed; }
 .issue-name { font-weight: 900; }
 .issue-summary { color: var(--muted); font-size: 0.9rem; }
 .subcategory-list { padding: 0.25rem 0.85rem 0.75rem; display: grid; gap: 0.4rem; }
@@ -152,12 +150,3 @@ textarea { margin-top: 0.75rem; resize: vertical; }
 @media (min-width: 720px) {
   .intro-card { grid-template-columns: 1fr 1fr; align-items: start; }
 }
-
-.export-label { display: block; margin: 1rem 0 0.4rem; font-weight: 900; }
-.export-text { min-height: 13rem; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.82rem; white-space: pre; overflow: auto; }
-.saved-photo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 0.8rem; margin-top: 1rem; }
-.saved-photo-card { border: 1px solid var(--line); border-radius: 0.8rem; padding: 0.6rem; background: #fff; min-width: 0; }
-.saved-photo-card img { display: block; width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 0.55rem; }
-.saved-photo-card p { margin: 0.5rem 0; overflow-wrap: anywhere; font-size: 0.8rem; color: var(--muted); }
-.saved-photo-card button { width: 100%; }
-button:disabled { cursor: wait; opacity: 0.65; }

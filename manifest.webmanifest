@@ -5,5 +5,5 @@
   "display": "standalone",
   "background_color": "#f7f8fb",
   "theme_color": "#f36e21",
-  "description": "Mobile-friendly room check reporting, copyable tab-separated text, and labeled photo downloads for RIT residence spaces."
+  "description": "Mobile-friendly room check reporting and CSV export for RIT residence spaces."
 }
