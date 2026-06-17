@@ -83,6 +83,7 @@ const state = {
 
 const buildingSelect = document.querySelector("#buildingSelect");
 const roomNumber = document.querySelector("#roomNumber");
+const roomType = document.querySelector("#roomType");
 const issueCatalogEl = document.querySelector("#issueCatalog");
 const saveEntryButton = document.querySelector("#saveEntryButton");
 const resetCurrentButton = document.querySelector("#resetCurrentButton");
@@ -116,7 +117,7 @@ let activePhotoIndex = null;
 let copyButtonTimer = null;
 
 function defaultDraft() {
-  return { building: buildings[0], roomNumber: "", issues: {}, customIssues: [], photos: [] };
+  return { building: buildings[0], roomNumber: "", roomType: "Dorm", issues: {}, customIssues: [], photos: [] };
 }
 
 function readStoredJson(key, fallback) {
@@ -154,6 +155,7 @@ function saveEntries() {
 function saveDraft() {
   state.draft.building = buildingSelect.value;
   state.draft.roomNumber = roomNumber.value.trim();
+  state.draft.roomType = roomType.value || "Dorm";
   return writeStoredJson(DRAFT_KEY, state.draft);
 }
 
@@ -168,6 +170,7 @@ function renderBuildings() {
     buildingSelect.value = savedBuilding;
   }
   roomNumber.value = state.draft.roomNumber || "";
+  roomType.value = state.draft.roomType || "Dorm";
 }
 
 function renderIssueCatalog() {
@@ -492,6 +495,7 @@ async function saveCurrentEntry() {
   }
 
   const savedRoomNumber = state.draft.roomNumber;
+  const savedRoomType = state.draft.roomType || "Dorm";
   saveEntryButton.disabled = true;
   showStatus(state.draft.photos.length ? "Labeling and saving photos…" : "Saving room…");
   let labeledPhotos;
@@ -514,6 +518,7 @@ async function saveCurrentEntry() {
     createdAt: new Date().toISOString(),
     building: state.draft.building,
     roomNumber: savedRoomNumber,
+    roomType: savedRoomType,
     issues,
     photos: labeledPhotos,
   };
@@ -567,7 +572,7 @@ function renderSavedEntries() {
       entryEl.className = "saved-entry";
       entryEl.innerHTML = `
         <h3>${escapeHtml(entry.building)} — ${escapeHtml(entry.roomNumber)}</h3>
-        <p>${entry.issues.length} issue rows • ${(entry.photos || []).length} photo(s)</p>
+        <p>${escapeHtml(entry.roomType || "Dorm")} • ${entry.issues.length} issue rows • ${(entry.photos || []).length} photo(s)</p>
         <p>${entry.issues.map(({ issue, subcategory }) => `${escapeHtml(issue)}: ${escapeHtml(subcategory)}`).join("; ")}</p>
       `;
       savedEntries.append(entryEl);
@@ -647,12 +652,20 @@ function cleanTextCell(value) {
   return String(value ?? "").replace(/[\t\r\n]+/g, " ").trim();
 }
 
+function formatIssuePairs(entry) {
+  return (entry.issues || [])
+    .map(({ issue, subcategory }) => `${cleanTextCell(issue)}, ${cleanTextCell(subcategory)}`)
+    .join("; ");
+}
+
+function formatIssueNotes(entry) {
+  return (entry.issues || []).map(({ description }) => cleanTextCell(description)).join("; ");
+}
+
 function buildExportText() {
-  const rows = [["Building", "Room", "Category", "Sub-issue", "Description"]];
+  const rows = [["Building Name", "Room Number", "Room Type", "Categories and Subcategories", "Additional Notes"]];
   state.entries.forEach((entry) => {
-    entry.issues.forEach(({ issue, subcategory, description }) => {
-      rows.push([entry.building, entry.roomNumber, issue, subcategory, description]);
-    });
+    rows.push([entry.building, entry.roomNumber, entry.roomType || "Dorm", formatIssuePairs(entry), formatIssueNotes(entry)]);
   });
   return rows.map((row) => row.map(cleanTextCell).join("\t")).join("\n");
 }
@@ -697,11 +710,9 @@ function csvCell(value) {
 }
 
 function buildCsvText() {
-  const rows = [["Building", "Room", "Category", "Sub-issue", "Description"]];
+  const rows = [["Building Name", "Room Number", "Room Type", "Categories and Subcategories", "Additional Notes"]];
   state.entries.forEach((entry) => {
-    entry.issues.forEach(({ issue, subcategory, description }) => {
-      rows.push([entry.building, entry.roomNumber, issue, subcategory, description]);
-    });
+    rows.push([entry.building, entry.roomNumber, entry.roomType || "Dorm", formatIssuePairs(entry), formatIssueNotes(entry)]);
   });
   return rows.map((row) => row.map(csvCell).join(",")).join("\r\n");
 }
@@ -819,6 +830,7 @@ function escapeHtml(value) {
 
 buildingSelect.addEventListener("change", saveDraft);
 roomNumber.addEventListener("input", saveDraft);
+roomType.addEventListener("change", saveDraft);
 photoInput.addEventListener("change", (event) => {
   handlePhotos(event.target.files);
   event.target.value = "";
