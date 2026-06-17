@@ -27,13 +27,13 @@ A mobile-friendly static web app for residence hall room checks. It can be hoste
 
 The copyable text is tab-separated and contains these five columns:
 
-1. Building
-2. Room
-3. Category
-4. Sub-issue
-5. Description
+1. Building Name
+2. Room Number
+3. Room Type (`Dorm`, `Lounge`, `Bathroom`, or `Elevator`)
+4. Categories and Subcategories, formatted as `Category, Subcategory; Category, Subcategory`
+5. Additional Notes, separated by semicolons in the same order as column 4
 
-Each selected issue/sub-issue becomes its own line. Copy the text and paste it into cell A1 of Excel, Google Sheets, or another spreadsheet program. The tabs place each value in its own column. A `.txt` download of the same data and a standard `.csv` download are both available.
+Each saved room becomes one line, with all selected category/subcategory pairs consolidated into column 4 and their notes consolidated into column 5. Copy the text and paste it into cell A1 of Excel, Google Sheets, or another spreadsheet program. The tabs place each value in its own column. A `.txt` download of the same data and a standard `.csv` download are both available.
 
 ## Photos
 
