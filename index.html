@@ -52,6 +52,14 @@
 
           <label for="roomNumber">Room number</label>
           <input id="roomNumber" name="roomNumber" type="text" inputmode="text" autocomplete="off" placeholder="Example: 4020, 6067, 11009" required />
+
+          <label for="roomType">Room type</label>
+          <select id="roomType" name="roomType" required>
+            <option value="Dorm" selected>Dorm</option>
+            <option value="Lounge">Lounge</option>
+            <option value="Bathroom">Bathroom</option>
+            <option value="Elevator">Elevator</option>
+          </select>
         </form>
       </section>
 
@@ -568,7 +576,7 @@
           </div>
           <span id="entryCount" class="count-pill">0 entries</span>
         </div>
-        <p class="hint">The tab-separated text below pastes into spreadsheet columns A–E: Building, Room, Category, Sub-issue, and Description.</p>
+        <p class="hint">The tab-separated text below pastes into spreadsheet columns A–E: Building Name, Room Number, Room Type, Categories and Subcategories, and Additional Notes.</p>
         <label class="export-label" for="exportText">Copyable room-check text</label>
         <textarea id="exportText" class="export-text" rows="10" readonly placeholder="Saved room data will appear here."></textarea>
         <div class="export-actions">
