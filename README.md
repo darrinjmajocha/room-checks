@@ -25,7 +25,7 @@ A mobile-friendly static web app for residence hall room checks. It can be hoste
 
 ## Text format
 
-The copyable text is tab-separated and contains these five columns:
+The copyable text is tab-separated, does not include a header row, and contains these five columns:
 
 1. Building Name
 2. Room Number
@@ -33,11 +33,11 @@ The copyable text is tab-separated and contains these five columns:
 4. Categories and Subcategories, formatted as `Category, Subcategory; Category, Subcategory`
 5. Additional Notes, separated by semicolons in the same order as column 4
 
-Each saved room becomes one line, with all selected category/subcategory pairs consolidated into column 4 and their notes consolidated into column 5. Copy the text and paste it into cell A1 of Excel, Google Sheets, or another spreadsheet program. The tabs place each value in its own column. A `.txt` download of the same data and a standard `.csv` download are both available.
+Each saved room becomes one line, with all selected category/subcategory pairs consolidated into column 4 and their notes consolidated into column 5. Copy the text and paste it directly into the first data row of Excel, Google Sheets, or another spreadsheet program. The tabs place each value in its own column. A `.txt` download of the same data and a standard `.csv` download are both available.
 
 ## Photos
 
-Photos are resized for browser storage when selected. When a room is saved, the app:
+Photos are compressed for browser storage as soon as they are selected. The app checks each selected photo size, scales large photos down, and lowers JPEG quality in small steps toward an approximately 180 KB target until the saved image is much smaller while keeping enough detail for room documentation. When a room is saved, the app:
 
 1. Adds a larger, single-line `Building — Room` label in the top-left corner.
 2. Adds each issue linked with **Log Issue** on its own line underneath the room label.
@@ -48,7 +48,7 @@ In the Attach Photos section, use **Log Issue** to associate one or more current
 
 ## Local storage and privacy
 
-Drafts, room entries, and labeled photos are stored in the browser's `localStorage` on the device being used. GitHub Pages does not provide a database. Copy/download the text and download the photos before clearing browser data or switching devices. Browser storage is limited, so large inspections should periodically export and clear completed entries.
+Drafts, room entries, and labeled photos are stored in the browser's `localStorage` on the device being used. GitHub Pages does not provide a database. Copy/download the text and download the photos before clearing browser data or switching devices. Browser storage is limited and cannot be made unlimited from a GitHub Pages app, so large inspections should periodically export and clear completed entries. The app compresses photos before saving to reduce the chance of hitting the browser storage limit.
 
 ## Seeing the latest deployed version
 
