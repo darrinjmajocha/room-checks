@@ -51,7 +51,7 @@
           </select>
 
           <label for="roomNumber">Room number</label>
-          <input id="roomNumber" name="roomNumber" type="text" inputmode="text" autocomplete="off" placeholder="Example: 4020, 6067, 11009" required />
+          <input id="roomNumber" name="roomNumber" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" placeholder="Example: 4020, 6067, 11009" required />
 
           <label for="roomType">Room type</label>
           <select id="roomType" name="roomType" required>
@@ -420,6 +420,56 @@
               </div>
             </div>
           </details>
+          <details class="issue-card" data-issue="Furniture">
+            <summary class="issue-toggle">
+              <span class="issue-name">Furniture</span>
+              <span class="issue-summary">Tap to expand</span>
+            </summary>
+            <div class="subcategory-list">
+              <div class="subcategory-row" data-subcategory="Bed Frame">
+                <label class="subcategory-check">
+                  <input type="checkbox" />
+                  <span>Bed Frame</span>
+                </label>
+                <textarea rows="3" placeholder="Describe what needs attention..." hidden></textarea>
+              </div>
+              <div class="subcategory-row" data-subcategory="Mattress">
+                <label class="subcategory-check">
+                  <input type="checkbox" />
+                  <span>Mattress</span>
+                </label>
+                <textarea rows="3" placeholder="Describe what needs attention..." hidden></textarea>
+              </div>
+              <div class="subcategory-row" data-subcategory="Drawer">
+                <label class="subcategory-check">
+                  <input type="checkbox" />
+                  <span>Drawer</span>
+                </label>
+                <textarea rows="3" placeholder="Describe what needs attention..." hidden></textarea>
+              </div>
+              <div class="subcategory-row" data-subcategory="Desk">
+                <label class="subcategory-check">
+                  <input type="checkbox" />
+                  <span>Desk</span>
+                </label>
+                <textarea rows="3" placeholder="Describe what needs attention..." hidden></textarea>
+              </div>
+              <div class="subcategory-row" data-subcategory="Chair">
+                <label class="subcategory-check">
+                  <input type="checkbox" />
+                  <span>Chair</span>
+                </label>
+                <textarea rows="3" placeholder="Describe what needs attention..." hidden></textarea>
+              </div>
+              <div class="subcategory-row" data-subcategory="Closet">
+                <label class="subcategory-check">
+                  <input type="checkbox" />
+                  <span>Closet</span>
+                </label>
+                <textarea rows="3" placeholder="Describe what needs attention..." hidden></textarea>
+              </div>
+            </div>
+          </details>
           <details class="issue-card" data-issue="Elevator">
             <summary class="issue-toggle">
               <span class="issue-name">Elevator</span>
@@ -548,7 +598,7 @@
             <h2 id="photos-heading">Attach photos</h2>
           </div>
         </div>
-        <p class="hint">Photos stay on this device. When the room is saved, each photo is labeled with the building and room number and renamed automatically.</p>
+        <p class="hint">Photos stay on this device. Photos are compressed when added, then labeled with the building and room number when the room is saved.</p>
         <label class="file-drop" for="photoInput">
           <span>Tap to add photos</span>
           <small>Use camera or photo library. Add as many as needed.</small>
@@ -576,7 +626,7 @@
           </div>
           <span id="entryCount" class="count-pill">0 entries</span>
         </div>
-        <p class="hint">The tab-separated text below pastes into spreadsheet columns A–E: Building Name, Room Number, Room Type, Categories and Subcategories, and Additional Notes.</p>
+        <p class="hint">The tab-separated text below has no header row and pastes into spreadsheet columns A–E: Building Name, Room Number, Room Type, Categories and Subcategories, and Additional Notes.</p>
         <label class="export-label" for="exportText">Copyable room-check text</label>
         <textarea id="exportText" class="export-text" rows="10" readonly placeholder="Saved room data will appear here."></textarea>
         <div class="export-actions">
