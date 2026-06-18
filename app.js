@@ -1,5 +1,9 @@
 const STORAGE_KEY = "rit-room-checks-v1";
 const DRAFT_KEY = "rit-room-checks-draft-v1";
+const PHOTO_DIMENSION_STEPS = [1000, 850, 700];
+const PHOTO_QUALITY_STEPS = [0.72, 0.64, 0.56, 0.48];
+const PHOTO_TARGET_BYTES = 180 * 1024;
+
 
 const buildings = [
   "Baker A",
@@ -37,6 +41,7 @@ const issueCatalog = {
   ],
   Lights: ["Exterior Building Lighting", "Lighting Repair-Inside", "No Power", "Outlet/Switch Cover Repair", "Other"],
   Elevator: ["Button Repair", "Not Responding", "Other"],
+  Furniture: ["Bed Frame", "Mattress", "Drawer", "Desk", "Chair", "Closet"],
   "Heating/Cooling/Ventilation": ["Controls", "General Repair", "Noise", "Steam", "Too Hot", "Too Cold", "Ventilation", "Other"],
   "Keys/Locks": ["Change Lock", "Damaged/Broken Lock"],
   Pests: ["Ants", "Bees", "Mice", "Other"],
@@ -234,6 +239,7 @@ function updateIssueSummary(issueNode, issue) {
 async function handlePhotos(files) {
   if (!files.length) return;
   try {
+    showStatus(`Compressing ${files.length} photo${files.length === 1 ? "" : "s"} for browser storage…`);
     const photos = await Promise.all([...files].map(fileToPhoto));
     state.draft.photos.push(...photos);
     if (!saveDraft()) {
@@ -242,7 +248,8 @@ async function handlePhotos(files) {
       return;
     }
     renderPhotos();
-    showStatus(`${photos.length} photo${photos.length === 1 ? "" : "s"} added. Labels will be applied when the room is saved.`);
+    const totalSavedBytes = photos.reduce((total, photo) => total + (photo.storedBytes || dataUrlSizeInBytes(photo.dataUrl)), 0);
+    showStatus(`${photos.length} photo${photos.length === 1 ? "" : "s"} compressed to ${formatBytes(totalSavedBytes)} and added. Labels will be applied when the room is saved.`);
   } catch (error) {
     console.error("Could not read selected photos", error);
     showStatus("The selected photos could not be read.", true);
@@ -252,8 +259,62 @@ async function handlePhotos(files) {
 async function fileToPhoto(file) {
   const dataUrl = await readFileAsDataUrl(file);
   const image = await loadImage(dataUrl);
-  const resizedDataUrl = drawResizedImage(image, 1800).toDataURL("image/jpeg", 0.86);
-  return { originalName: file.name, dataUrl: resizedDataUrl, associatedIssues: [] };
+  const compressedDataUrl = await compressImageForStorage(image);
+  return {
+    originalName: file.name,
+    originalBytes: file.size || dataUrlSizeInBytes(dataUrl),
+    storedBytes: dataUrlSizeInBytes(compressedDataUrl),
+    dataUrl: compressedDataUrl,
+    associatedIssues: [],
+  };
+}
+
+async function compressImageForStorage(image) {
+  let bestDataUrl = "";
+  for (const maxDimension of PHOTO_DIMENSION_STEPS) {
+    const canvas = drawResizedImage(image, maxDimension);
+    const compressedDataUrl = await compressCanvasForStorage(canvas);
+    bestDataUrl = compressedDataUrl;
+    if (dataUrlSizeInBytes(compressedDataUrl) <= PHOTO_TARGET_BYTES) return compressedDataUrl;
+  }
+  return bestDataUrl;
+}
+
+async function compressCanvasForStorage(canvas) {
+  let bestDataUrl = "";
+  for (const quality of PHOTO_QUALITY_STEPS) {
+    const dataUrl = await canvasToJpegDataUrl(canvas, quality);
+    bestDataUrl = dataUrl;
+    if (dataUrlSizeInBytes(dataUrl) <= PHOTO_TARGET_BYTES) return dataUrl;
+  }
+  return bestDataUrl;
+}
+
+function canvasToJpegDataUrl(canvas, quality) {
+  if (!canvas.toBlob) return Promise.resolve(canvas.toDataURL("image/jpeg", quality));
+  return new Promise((resolve) => {
+    canvas.toBlob((blob) => {
+      if (!blob) {
+        resolve(canvas.toDataURL("image/jpeg", quality));
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => resolve(canvas.toDataURL("image/jpeg", quality));
+      reader.readAsDataURL(blob);
+    }, "image/jpeg", quality);
+  });
+}
+
+function dataUrlSizeInBytes(dataUrl) {
+  const base64 = String(dataUrl).split(",")[1] || "";
+  const padding = base64.endsWith("==") ? 2 : base64.endsWith("=") ? 1 : 0;
+  return Math.max(0, Math.ceil((base64.length * 3) / 4) - padding);
+}
+
+function formatBytes(bytes) {
+  if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
 function readFileAsDataUrl(file) {
@@ -289,7 +350,7 @@ function safeFilenamePart(value) {
 
 async function labelPhoto(photo, building, room, index) {
   const image = await loadImage(photo.dataUrl);
-  const canvas = drawResizedImage(image, 1800);
+  const canvas = drawResizedImage(image, PHOTO_DIMENSION_STEPS[0]);
   const width = canvas.width;
   const height = canvas.height;
   const context = canvas.getContext("2d");
@@ -336,9 +397,11 @@ async function labelPhoto(photo, building, room, index) {
     textY += issueLineHeights[lineIndex];
   });
 
+  const labeledDataUrl = await compressCanvasForStorage(canvas);
   return {
     name: `${safeFilenamePart(building)}_${safeFilenamePart(room)}_${index + 1}.jpg`,
-    dataUrl: canvas.toDataURL("image/jpeg", 0.86),
+    dataUrl: labeledDataUrl,
+    storedBytes: dataUrlSizeInBytes(labeledDataUrl),
   };
 }
 
@@ -445,6 +508,11 @@ function renderPhotos() {
     associationSummary.textContent = associationCount
       ? `${associationCount} issue${associationCount === 1 ? "" : "s"} logged`
       : "No issues logged";
+    const sizeSummary = document.createElement("p");
+    sizeSummary.className = "photo-issue-summary";
+    const originalBytes = photo.originalBytes || photo.storedBytes || dataUrlSizeInBytes(photo.dataUrl);
+    const storedBytes = photo.storedBytes || dataUrlSizeInBytes(photo.dataUrl);
+    sizeSummary.textContent = `Compressed from ${formatBytes(originalBytes)} to ${formatBytes(storedBytes)}`;
     const logButton = document.createElement("button");
     logButton.className = "ghost-button";
     logButton.type = "button";
@@ -459,7 +527,7 @@ function renderPhotos() {
       saveDraft();
       renderPhotos();
     });
-    card.append(image, associationSummary, logButton, removeButton);
+    card.append(image, associationSummary, sizeSummary, logButton, removeButton);
     photoPreview.append(card);
   });
 }
@@ -663,10 +731,13 @@ function formatIssueNotes(entry) {
 }
 
 function buildExportText() {
-  const rows = [["Building Name", "Room Number", "Room Type", "Categories and Subcategories", "Additional Notes"]];
-  state.entries.forEach((entry) => {
-    rows.push([entry.building, entry.roomNumber, entry.roomType || "Dorm", formatIssuePairs(entry), formatIssueNotes(entry)]);
-  });
+  const rows = state.entries.map((entry) => [
+    entry.building,
+    entry.roomNumber,
+    entry.roomType || "Dorm",
+    formatIssuePairs(entry),
+    formatIssueNotes(entry),
+  ]);
   return rows.map((row) => row.map(cleanTextCell).join("\t")).join("\n");
 }
 
