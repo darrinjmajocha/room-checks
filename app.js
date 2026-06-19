@@ -3,6 +3,8 @@ const DRAFT_KEY = "rit-room-checks-draft-v1";
 const PHOTO_DIMENSION_STEPS = [1000, 850, 700];
 const PHOTO_QUALITY_STEPS = [0.72, 0.64, 0.56, 0.48];
 const PHOTO_TARGET_BYTES = 180 * 1024;
+const PHOTO_DB_NAME = "rit-room-checks-photos-v1";
+const PHOTO_STORE_NAME = "photos";
 
 
 const buildings = [
@@ -41,7 +43,7 @@ const issueCatalog = {
   ],
   Lights: ["Exterior Building Lighting", "Lighting Repair-Inside", "No Power", "Outlet/Switch Cover Repair", "Other"],
   Elevator: ["Button Repair", "Not Responding", "Other"],
-  Furniture: ["Bed Frame", "Mattress", "Drawer", "Desk", "Chair", "Closet"],
+  Furniture: ["Bed Frame", "Mattress", "Drawer", "Desk", "Chair", "Closet", "Refrigerator"],
   "Heating/Cooling/Ventilation": ["Controls", "General Repair", "Noise", "Steam", "Too Hot", "Too Cold", "Ventilation", "Other"],
   "Keys/Locks": ["Change Lock", "Damaged/Broken Lock"],
   Pests: ["Ants", "Bees", "Mice", "Other"],
@@ -120,6 +122,9 @@ const savePhotoIssuesButton = document.querySelector("#savePhotoIssuesButton");
 const infoDialog = document.querySelector("#infoDialog");
 let activePhotoIndex = null;
 let copyButtonTimer = null;
+let photoDbPromise = null;
+let savedPhotoRenderToken = 0;
+let draftPhotoRenderToken = 0;
 
 function defaultDraft() {
   return { building: buildings[0], roomNumber: "", roomType: "Dorm", issues: {}, customIssues: [], photos: [] };
@@ -240,10 +245,12 @@ async function handlePhotos(files) {
   if (!files.length) return;
   try {
     showStatus(`Compressing ${files.length} photo${files.length === 1 ? "" : "s"} for browser storage…`);
-    const photos = await Promise.all([...files].map(fileToPhoto));
+    const compressedPhotos = await Promise.all([...files].map(fileToPhoto));
+    const photos = await Promise.all(compressedPhotos.map(saveStoredPhoto));
     state.draft.photos.push(...photos);
     if (!saveDraft()) {
       state.draft.photos.splice(-photos.length, photos.length);
+      photos.forEach((photo) => deleteStoredPhoto(photo).catch((error) => console.warn("Could not delete unsaved photo", error)));
       showStatus("Those photos could not be saved. Try fewer or smaller photos.", true);
       return;
     }
@@ -494,14 +501,118 @@ function savePhotoIssueAssociations() {
   activePhotoIndex = null;
 }
 
-function renderPhotos() {
+function createEntryId() {
+  return globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
+function openPhotoDb() {
+  if (!("indexedDB" in globalThis)) return Promise.resolve(null);
+  if (photoDbPromise) return photoDbPromise;
+  photoDbPromise = new Promise((resolve, reject) => {
+    const request = indexedDB.open(PHOTO_DB_NAME, 1);
+    request.onupgradeneeded = () => {
+      const database = request.result;
+      if (!database.objectStoreNames.contains(PHOTO_STORE_NAME)) database.createObjectStore(PHOTO_STORE_NAME, { keyPath: "id" });
+    };
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  }).catch((error) => {
+    console.warn("Could not open photo database; falling back to localStorage photo records", error);
+    return null;
+  });
+  return photoDbPromise;
+}
+
+async function saveStoredPhoto(photo) {
+  const id = photo.id || createEntryId();
+  const record = { ...photo, id };
+  const database = await openPhotoDb();
+  if (!database) return record;
+  return new Promise((resolve, reject) => {
+    const transaction = database.transaction(PHOTO_STORE_NAME, "readwrite");
+    transaction.objectStore(PHOTO_STORE_NAME).put(record);
+    transaction.oncomplete = () => resolve({ id, name: record.name, originalName: record.originalName, storedBytes: record.storedBytes, originalBytes: record.originalBytes, associatedIssues: record.associatedIssues || [] });
+    transaction.onerror = () => reject(transaction.error);
+  });
+}
+
+async function getStoredPhoto(photo) {
+  if (photo?.dataUrl || !photo?.id) return photo;
+  const database = await openPhotoDb();
+  if (!database) return photo;
+  return new Promise((resolve, reject) => {
+    const request = database.transaction(PHOTO_STORE_NAME, "readonly").objectStore(PHOTO_STORE_NAME).get(photo.id);
+    request.onsuccess = () => resolve(request.result ? { ...photo, ...request.result } : photo);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+async function clearStoredPhotos() {
+  const database = await openPhotoDb();
+  if (!database) return;
+  return new Promise((resolve, reject) => {
+    const transaction = database.transaction(PHOTO_STORE_NAME, "readwrite");
+    transaction.objectStore(PHOTO_STORE_NAME).clear();
+    transaction.oncomplete = () => resolve();
+    transaction.onerror = () => reject(transaction.error);
+  });
+}
+
+async function deleteStoredPhoto(photo) {
+  if (!photo?.id) return;
+  const database = await openPhotoDb();
+  if (!database) return;
+  return new Promise((resolve, reject) => {
+    const transaction = database.transaction(PHOTO_STORE_NAME, "readwrite");
+    transaction.objectStore(PHOTO_STORE_NAME).delete(photo.id);
+    transaction.oncomplete = () => resolve();
+    transaction.onerror = () => reject(transaction.error);
+  });
+}
+
+async function migrateDraftPhotos() {
+  if (!state.draft.photos?.length) return;
+  let changed = false;
+  state.draft.photos = await Promise.all(state.draft.photos.map(async (photo) => {
+    if (!photo.dataUrl) return photo;
+    const storedPhoto = await saveStoredPhoto(photo);
+    if (!storedPhoto.dataUrl) changed = true;
+    return storedPhoto;
+  }));
+  if (changed) writeStoredJson(DRAFT_KEY, state.draft);
+}
+
+async function migrateStoredEntryPhotos() {
+  let changed = false;
+  for (const entry of state.entries) {
+    if (!entry.photos?.length) continue;
+    entry.photos = await Promise.all(entry.photos.map(async (photo) => {
+      if (!photo.dataUrl) return photo;
+      const storedPhoto = await saveStoredPhoto(photo);
+      if (!storedPhoto.dataUrl) changed = true;
+      return storedPhoto;
+    }));
+  }
+  if (changed) writeStoredJson(STORAGE_KEY, state.entries);
+}
+
+async function resolvePhotoDataUrl(photo) {
+  const storedPhoto = await getStoredPhoto(photo);
+  return storedPhoto?.dataUrl || "";
+}
+
+async function renderPhotos() {
+  const renderToken = ++draftPhotoRenderToken;
   photoPreview.innerHTML = "";
-  state.draft.photos.forEach((photo, index) => {
+  for (const photo of state.draft.photos) {
+    const storedPhoto = await getStoredPhoto(photo);
+    if (renderToken !== draftPhotoRenderToken) return;
+    const index = state.draft.photos.indexOf(photo);
     const card = document.createElement("div");
     card.className = "photo-card";
     const image = document.createElement("img");
-    image.src = photo.dataUrl;
-    image.alt = photo.originalName || photo.name || "Selected photo";
+    image.src = storedPhoto.dataUrl || "";
+    image.alt = storedPhoto.originalName || storedPhoto.name || "Selected photo";
     const associationSummary = document.createElement("p");
     associationSummary.className = "photo-issue-summary";
     const associationCount = (photo.associatedIssues || []).length;
@@ -510,8 +621,8 @@ function renderPhotos() {
       : "No issues logged";
     const sizeSummary = document.createElement("p");
     sizeSummary.className = "photo-issue-summary";
-    const originalBytes = photo.originalBytes || photo.storedBytes || dataUrlSizeInBytes(photo.dataUrl);
-    const storedBytes = photo.storedBytes || dataUrlSizeInBytes(photo.dataUrl);
+    const originalBytes = storedPhoto.originalBytes || storedPhoto.storedBytes || dataUrlSizeInBytes(storedPhoto.dataUrl || "");
+    const storedBytes = storedPhoto.storedBytes || dataUrlSizeInBytes(storedPhoto.dataUrl || "");
     sizeSummary.textContent = `Compressed from ${formatBytes(originalBytes)} to ${formatBytes(storedBytes)}`;
     const logButton = document.createElement("button");
     logButton.className = "ghost-button";
@@ -523,21 +634,18 @@ function renderPhotos() {
     removeButton.type = "button";
     removeButton.textContent = "Remove";
     removeButton.addEventListener("click", () => {
-      state.draft.photos.splice(index, 1);
+      const [removedPhoto] = state.draft.photos.splice(index, 1);
+      deleteStoredPhoto(removedPhoto).catch((error) => console.warn("Could not delete removed draft photo", error));
       saveDraft();
       renderPhotos();
     });
     card.append(image, associationSummary, sizeSummary, logButton, removeButton);
     photoPreview.append(card);
-  });
+  }
 }
 
 function collectIssues() {
   return collectDraftIssues(state.draft);
-}
-
-function createEntryId() {
-  return globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
 
 async function saveCurrentEntry() {
@@ -569,11 +677,14 @@ async function saveCurrentEntry() {
   let labeledPhotos;
   try {
     const currentIssueKeys = new Set(issues.map(issueAssociationKey));
-    const photosForSubmission = state.draft.photos.map((photo) => ({
+    const draftPhotos = await Promise.all(state.draft.photos.map(getStoredPhoto));
+    const photosForSubmission = draftPhotos.map((photo, index) => ({
       ...photo,
-      associatedIssues: (photo.associatedIssues || []).filter((issue) => currentIssueKeys.has(issueAssociationKey(issue))),
+      associatedIssues: (state.draft.photos[index].associatedIssues || []).filter((issue) => currentIssueKeys.has(issueAssociationKey(issue))),
     }));
-    labeledPhotos = await labelRoomPhotos(photosForSubmission, state.draft.building, savedRoomNumber);
+    if (photosForSubmission.some((photo) => !photo.dataUrl)) throw new Error("A draft photo could not be found in browser storage.");
+    const labeledPhotoRecords = await labelRoomPhotos(photosForSubmission, state.draft.building, savedRoomNumber);
+    labeledPhotos = await Promise.all(labeledPhotoRecords.map(saveStoredPhoto));
   } catch (error) {
     console.error("Could not label room photos", error);
     showStatus("The photos could not be labeled. Remove the affected photo and try again.", true);
@@ -615,6 +726,7 @@ async function saveCurrentEntry() {
 
 function resetCurrentDraft(keepBuilding = false) {
   const building = keepBuilding ? state.draft.building : buildings[0];
+  (state.draft.photos || []).forEach((photo) => deleteStoredPhoto(photo).catch((error) => console.warn("Could not delete draft photo", error)));
   state.draft = { ...defaultDraft(), building };
   writeStoredJson(DRAFT_KEY, state.draft);
   renderBuildings();
@@ -647,27 +759,36 @@ function renderSavedEntries() {
     });
   }
 
+  renderSavedPhotoCards(photos);
+}
+
+async function renderSavedPhotoCards(photos) {
+  const renderToken = ++savedPhotoRenderToken;
+  savedPhotos.innerHTML = "";
   if (!photos.length) {
     savedPhotos.innerHTML = '<p class="hint">No labeled photos saved yet.</p>';
     return;
   }
 
-  photos.forEach((photo) => {
+  for (const photo of photos) {
+    const storedPhoto = await getStoredPhoto(photo);
+    if (renderToken !== savedPhotoRenderToken) return;
     const card = document.createElement("article");
     card.className = "saved-photo-card";
     const image = document.createElement("img");
-    image.src = photo.dataUrl;
-    image.alt = photo.name;
+    image.src = storedPhoto.dataUrl || "";
+    image.alt = storedPhoto.name;
     const name = document.createElement("p");
-    name.textContent = photo.name;
+    name.textContent = storedPhoto.name;
     const button = document.createElement("button");
     button.className = "ghost-button";
     button.type = "button";
     button.textContent = "Download";
-    button.addEventListener("click", () => downloadPhoto(photo));
+    button.disabled = !storedPhoto.dataUrl;
+    button.addEventListener("click", () => downloadPhoto(storedPhoto));
     card.append(image, name, button);
     savedPhotos.append(card);
-  });
+  }
 }
 
 function requestConfirmation({ title, message, confirmLabel }) {
@@ -707,7 +828,9 @@ async function confirmClearSavedEntries() {
   if (!confirmed) return;
 
   const previousEntries = state.entries;
+  const savedPhotosToDelete = previousEntries.flatMap((entry) => entry.photos || []);
   state.entries = [];
+  await Promise.all(savedPhotosToDelete.map((photo) => deleteStoredPhoto(photo))).catch((error) => console.warn("Could not clear stored photos", error));
   if (!saveEntries()) {
     state.entries = previousEntries;
     showStatus("Saved entries could not be cleared.", true);
@@ -758,14 +881,28 @@ async function copyExportText() {
     return;
   }
   const text = buildExportText();
-  try {
-    await navigator.clipboard.writeText(text);
-  } catch {
+  exportText.value = text;
+  showCopyButtonSuccess();
+  let copied = false;
+  if (navigator.clipboard?.writeText && globalThis.isSecureContext) {
+    try {
+      await navigator.clipboard.writeText(text);
+      copied = true;
+    } catch (error) {
+      console.warn("Clipboard API copy failed; trying text selection fallback", error);
+    }
+  }
+  if (!copied) {
     exportText.focus();
     exportText.select();
-    document.execCommand("copy");
+    exportText.setSelectionRange(0, exportText.value.length);
+    try {
+      copied = document.execCommand("copy");
+    } catch (error) {
+      console.warn("Text selection copy failed", error);
+    }
   }
-  showCopyButtonSuccess();
+  showStatus(copied ? "Text copied." : "Text selected. If it did not copy automatically, tap and hold the selected text to copy.", !copied);
 }
 
 function downloadTextFile() {
@@ -817,8 +954,13 @@ function downloadBlob(blob, filename) {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-function downloadPhoto(photo) {
-  downloadBlob(dataUrlToBlob(photo.dataUrl), photo.name);
+async function downloadPhoto(photo) {
+  const dataUrl = await resolvePhotoDataUrl(photo);
+  if (!dataUrl) {
+    showStatus("That saved photo could not be found on this device.", true);
+    return;
+  }
+  downloadBlob(dataUrlToBlob(dataUrl), photo.name);
 }
 
 function crc32(bytes) {
@@ -884,15 +1026,21 @@ function createZip(files) {
   return new Blob([...localParts, centralDirectory, endRecord], { type: "application/zip" });
 }
 
-function downloadAllPhotos() {
+async function downloadAllPhotos() {
   const photos = state.entries.flatMap((entry) => entry.photos || []);
   if (!photos.length) {
     showStatus("There are no saved photos to download.", true);
     return;
   }
-  const files = photos.map((photo) => ({ name: photo.name, bytes: dataUrlToBytes(photo.dataUrl) }));
+  showStatus(`Preparing ${photos.length} photo${photos.length === 1 ? "" : "s"} for ZIP download…`);
+  const resolvedPhotos = await Promise.all(photos.map(async (photo) => ({ ...photo, dataUrl: await resolvePhotoDataUrl(photo) })));
+  const files = resolvedPhotos.filter((photo) => photo.dataUrl).map((photo) => ({ name: photo.name, bytes: dataUrlToBytes(photo.dataUrl) }));
+  if (!files.length) {
+    showStatus("Saved photos could not be found on this device.", true);
+    return;
+  }
   downloadBlob(createZip(files), `room-check-photos-${new Date().toISOString().slice(0, 10)}.zip`);
-  showStatus(`${photos.length} photo${photos.length === 1 ? "" : "s"} saved in one ZIP file.`);
+  showStatus(`${files.length} photo${files.length === 1 ? "" : "s"} saved in one ZIP file.`);
 }
 
 function escapeHtml(value) {
@@ -949,4 +1097,9 @@ renderBuildings();
 renderIssueCatalog();
 renderCustomIssues();
 renderPhotos();
-renderSavedEntries();
+Promise.all([migrateDraftPhotos(), migrateStoredEntryPhotos()])
+  .catch((error) => console.warn("Could not migrate photos out of localStorage", error))
+  .finally(() => {
+    renderPhotos();
+    renderSavedEntries();
+  });
