@@ -48,7 +48,7 @@ In the Attach Photos section, use **Log Issue** to associate one or more current
 
 ## Local storage and privacy
 
-Drafts, room entries, and labeled photos are stored in the browser's `localStorage` on the device being used. GitHub Pages does not provide a database. Copy/download the text and download the photos before clearing browser data or switching devices. Browser storage is limited and cannot be made unlimited from a GitHub Pages app, so large inspections should periodically export and clear completed entries. The app compresses photos before saving to reduce the chance of hitting the browser storage limit.
+Draft text data and room entries are stored in the browser's `localStorage`, while photos are stored in the browser's IndexedDB photo store on the device being used. GitHub Pages does not provide a database. Copy/download the text and download the photos before clearing browser data or switching devices. Browser storage is limited and cannot be made unlimited from a GitHub Pages app, so large inspections should periodically export and clear completed entries. The app compresses photos before saving and keeps image data outside the main text-entry storage to better support larger inspections with many photos.
 
 ## Seeing the latest deployed version
 
