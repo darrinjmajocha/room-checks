@@ -29,7 +29,7 @@ test("native issue categories are present and descending before JavaScript runs"
     "Water Leaks", "Structural Building Maintenance", "Plumbing", "Pests", "Lights", "Keys/Locks",
     "Heating/Cooling/Ventilation", "Furniture", "Elevator", "Cleaning",
   ]);
-  assert.equal((index.match(/class="subcategory-row"/g) || []).length, 61);
+  assert.equal((index.match(/class="subcategory-row"/g) || []).length, 62);
 });
 
 test("the self-contained app still includes data and enhancement helpers", () => {
@@ -50,7 +50,7 @@ test("room type dropdown and export controls are present", () => {
   assert.match(index, /<option value="Elevator">Elevator<\/option>/);
   assert.match(app, /roomType: "Dorm"/);
   assert.match(app, /roomType\.addEventListener\("change", saveDraft\)/);
-  assert.match(app, /Furniture: \["Bed Frame", "Mattress", "Drawer", "Desk", "Chair", "Closet"\]/);
+  assert.match(app, /Furniture: \["Bed Frame", "Mattress", "Drawer", "Desk", "Chair", "Closet", "Refrigerator"\]/);
   assert.match(app, /"Building Name", "Room Number", "Room Type", "Categories and Subcategories", "Additional Notes"/);
   assert.match(index, /id="exportText"/);
   assert.match(index, /id="copyTextButton"/);
@@ -73,6 +73,10 @@ test("photos are compressed before being saved to browser storage", () => {
   assert.match(app, /async function compressImageForStorage/);
   assert.match(app, /async function compressCanvasForStorage/);
   assert.match(app, /dataUrlSizeInBytes/);
+  assert.match(app, /PHOTO_DB_NAME = "rit-room-checks-photos-v1"/);
+  assert.match(app, /function openPhotoDb/);
+  assert.match(app, /async function saveStoredPhoto/);
+  assert.match(app, /async function migrateDraftPhotos/);
   assert.match(app, /Compressed from/);
 });
 
@@ -97,6 +101,8 @@ test("photo issue logging, submit heading, and copy button feedback are present"
   assert.match(app, /showCopyButtonSuccess\(\)/);
   assert.match(app, /copyTextButton\.textContent = "Copied!"/);
   assert.match(app, /copyTextButton\.classList\.add\("copy-success"\)/);
+  assert.match(app, /globalThis\.isSecureContext/);
+  assert.match(app, /document\.execCommand\("copy"\)/);
   assert.match(app, /}, 3000\)/);
 });
 
