@@ -29,40 +29,12 @@ const buildings = [
 ];
 
 const issueCatalog = {
-  Cleaning: [
-    "Bathroom Refresh",
-    "Clean or Shovel Entry Ways",
-    "Garbage Removal",
-    "Garbage/Recycling Bins Needed",
-    "General Cleaning",
-    "Inside Vandalism",
-    "Mold",
-    "Replace Shower Curtain",
-    "Spill or Glass Cleanup",
-    "Other",
-  ],
-  Lights: ["Exterior Building Lighting", "Lighting Repair-Inside", "No Power", "Outlet/Switch Cover Repair", "Other"],
-  Elevator: ["Button Repair", "Not Responding", "Other"],
-  Furniture: ["Bed Frame", "Mattress", "Drawer", "Desk", "Chair", "Closet", "Refrigerator"],
-  "Heating/Cooling/Ventilation": ["Controls", "General Repair", "Noise", "Steam", "Too Hot", "Too Cold", "Ventilation", "Other"],
-  "Keys/Locks": ["Change Lock", "Damaged/Broken Lock"],
-  Pests: ["Ants", "Bees", "Mice", "Other"],
-  Plumbing: ["Clogged Drains", "Drinking Fountains", "Showers", "Sink", "Toilet Clog", "Toilet/Urinal", "Water Temperature", "Other"],
-  "Structural Building Maintenance": [
-    "Automated Accessible Door",
-    "Ceiling",
-    "Door",
-    "Flooring",
-    "Repair Bathroom Stall",
-    "Repair Card Reader",
-    "Replace Mirror",
-    "Wall",
-    "Window/Screen",
-    "Other",
-  ],
-  "Water Leaks": ["Bathroom", "Ceiling", "Kitchen", "Sprinkler System", "Other"],
+  Fridges: ["Needs Cleaning", "Moldy", "Malfunctioning", "Other"],
+  Furniture: ["Chair", "Desk", "Drawer", "Dresser", "Mattress", "Mattress Frame", "Other"],
+  HVAC: ["Displaced A/C Panel", "Needs Servicing", "Other"],
+  Walls: ["Chipped Paint", "Cracks", "Holes", "Other"],
+  Windows: ["Window Limiter", "Window Push Bar", "Window Screen", "Other"],
 };
-
 function sortCategoriesDescending(catalog) {
   return Object.entries(catalog).sort(([categoryA], [categoryB]) => categoryB.localeCompare(categoryA));
 }
