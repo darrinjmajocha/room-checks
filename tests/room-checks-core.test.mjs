@@ -3,19 +3,19 @@ import assert from "node:assert/strict";
 import { buildCsvText, buildTabSeparatedText, collectDraftIssues, photoFilename, sortCategoriesDescending } from "../room-checks-core.mjs";
 
 test("categories are sorted in descending alphabetical order", () => {
-  const catalog = { Cleaning: [], "Water Leaks": [], Elevator: [], Plumbing: [] };
+  const catalog = { Fridges: [], Windows: [], HVAC: [], Walls: [] };
   assert.deepEqual(
     sortCategoriesDescending(catalog).map(([category]) => category),
-    ["Water Leaks", "Plumbing", "Elevator", "Cleaning"],
+    ["Windows", "Walls", "HVAC", "Fridges"],
   );
 });
 
 test("selected issues are collected even when their description is blank", () => {
   const issues = collectDraftIssues({
-    issues: { Cleaning: { "General Cleaning": "" } },
+    issues: { Walls: { "Chipped Paint": "" } },
     customIssues: [],
   });
-  assert.deepEqual(issues, [{ issue: "Cleaning", subcategory: "General Cleaning", description: "" }]);
+  assert.deepEqual(issues, [{ issue: "Walls", subcategory: "Chipped Paint", description: "" }]);
 });
 
 test("custom issues are included and empty drafts are ignored", () => {
@@ -37,14 +37,14 @@ test("tab-separated output creates five consolidated spreadsheet columns with no
       roomNumber: "4020",
       roomType: "Bathroom",
       issues: [
-        { issue: "Cleaning", subcategory: "Mold", description: "Near shower\ncorner" },
-        { issue: "Lights", subcategory: "No Power", description: "East wall" },
+        { issue: "Fridges", subcategory: "Moldy", description: "Near seal\nedge" },
+        { issue: "Windows", subcategory: "Window Screen", description: "East wall" },
       ],
     },
   ]);
   assert.equal(
     text,
-    "Baker A\t4020\tBathroom\tCleaning, Mold; Lights, No Power\tNear shower corner; East wall",
+    "Baker A\t4020\tBathroom\tFridges, Moldy; Windows, Window Screen\tNear seal edge; East wall",
   );
 });
 
@@ -59,12 +59,12 @@ test("CSV output quotes all five consolidated columns and escapes descriptions",
       building: "Baker A",
       roomNumber: "4020",
       roomType: "Dorm",
-      issues: [{ issue: "Cleaning", subcategory: "Mold", description: 'Wall, near "sink"' }],
+      issues: [{ issue: "Walls", subcategory: "Holes", description: 'Wall, near "desk"' }],
     },
   ]);
   assert.equal(
     csv,
     '"Building Name","Room Number","Room Type","Categories and Subcategories","Additional Notes"\r\n' +
-      '"Baker A","4020","Dorm","Cleaning, Mold","Wall, near ""sink"""',
+      '"Baker A","4020","Dorm","Walls, Holes","Wall, near ""desk"""',
   );
 });
