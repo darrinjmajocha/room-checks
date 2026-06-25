@@ -25,11 +25,8 @@ test("buildings are present in HTML before JavaScript runs", () => {
 
 test("native issue categories are present and descending before JavaScript runs", () => {
   const categories = [...index.matchAll(/<details class="issue-card" data-issue="([^"]+)">/g)].map((match) => match[1]);
-  assert.deepEqual(categories, [
-    "Water Leaks", "Structural Building Maintenance", "Plumbing", "Pests", "Lights", "Keys/Locks",
-    "Heating/Cooling/Ventilation", "Furniture", "Elevator", "Cleaning",
-  ]);
-  assert.equal((index.match(/class="subcategory-row"/g) || []).length, 62);
+  assert.deepEqual(categories, ["Windows", "Walls", "HVAC", "Furniture", "Fridges"]);
+  assert.equal((index.match(/class="subcategory-row"/g) || []).length, 22);
 });
 
 test("the self-contained app still includes data and enhancement helpers", () => {
@@ -50,7 +47,11 @@ test("room type dropdown and export controls are present", () => {
   assert.match(index, /<option value="Elevator">Elevator<\/option>/);
   assert.match(app, /roomType: "Dorm"/);
   assert.match(app, /roomType\.addEventListener\("change", saveDraft\)/);
-  assert.match(app, /Furniture: \["Bed Frame", "Mattress", "Drawer", "Desk", "Chair", "Closet", "Refrigerator"\]/);
+  assert.match(app, /Fridges: \["Needs Cleaning", "Moldy", "Malfunctioning", "Other"\]/);
+  assert.match(app, /Furniture: \["Chair", "Desk", "Drawer", "Dresser", "Mattress", "Mattress Frame", "Other"\]/);
+  assert.match(app, /HVAC: \["Displaced A\/C Panel", "Needs Servicing", "Other"\]/);
+  assert.match(app, /Walls: \["Chipped Paint", "Cracks", "Holes", "Other"\]/);
+  assert.match(app, /Windows: \["Window Limiter", "Window Push Bar", "Window Screen", "Other"\]/);
   assert.match(app, /"Building Name", "Room Number", "Room Type", "Categories and Subcategories", "Additional Notes"/);
   assert.match(index, /id="exportText"/);
   assert.match(index, /id="copyTextButton"/);
