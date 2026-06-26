@@ -29,20 +29,30 @@ const buildings = [
 ];
 
 const issueCatalog = {
+  Carpet: ["Holes & Tears", "Stains", "Other"],
   Fridges: ["Needs Cleaning", "Moldy", "Malfunctioning", "Other"],
   Furniture: ["Chair", "Desk", "Drawer", "Dresser", "Mattress", "Mattress Frame", "Other"],
   HVAC: ["Displaced A/C Panel", "Needs Servicing", "Other"],
-  Walls: ["Chipped Paint", "Cracks", "Holes", "Other"],
+  Paint: ["Crack", "Peeling", "Other"],
   Windows: ["Window Limiter", "Window Push Bar", "Window Screen", "Other"],
 };
 function sortCategoriesDescending(catalog) {
   return Object.entries(catalog).sort(([categoryA], [categoryB]) => categoryB.localeCompare(categoryA));
 }
 
+function resolveIssueSubcategory(draft, issue, subcategory) {
+  if (subcategory !== "Other") return subcategory;
+  return draft.customSubcategories?.[issue]?.[subcategory]?.trim() || subcategory;
+}
+
 function collectDraftIssues(draft) {
   const selectedIssues = Object.entries(draft.issues || {})
     .flatMap(([issue, subcategories]) =>
-      Object.entries(subcategories || {}).map(([subcategory, description]) => ({ issue, subcategory, description })),
+      Object.entries(subcategories || {}).map(([subcategory, description]) => ({
+        issue,
+        subcategory: resolveIssueSubcategory(draft, issue, subcategory),
+        description,
+      })),
     )
     .filter(({ subcategory }) => subcategory);
 
@@ -99,7 +109,7 @@ let savedPhotoRenderToken = 0;
 let draftPhotoRenderToken = 0;
 
 function defaultDraft() {
-  return { building: buildings[0], roomNumber: "", roomType: "Dorm", issues: {}, customIssues: [], photos: [] };
+  return { building: buildings[0], roomNumber: "", roomType: "Dorm", issues: {}, customSubcategories: {}, customIssues: [], photos: [] };
 }
 
 function readStoredJson(key, fallback) {
@@ -169,20 +179,34 @@ function renderIssueCatalog() {
       const subcategory = row.dataset.subcategory;
       const checkbox = row.querySelector('input[type="checkbox"]');
       const textarea = row.querySelector("textarea");
+      const customSubcategoryInput = row.querySelector(".custom-subcategory-input");
       checkbox.checked = Object.prototype.hasOwnProperty.call(state.draft.issues?.[issue] || {}, subcategory);
       textarea.value = state.draft.issues?.[issue]?.[subcategory] || "";
       textarea.hidden = !checkbox.checked;
+      if (customSubcategoryInput) {
+        customSubcategoryInput.value = state.draft.customSubcategories?.[issue]?.[subcategory] || "";
+        customSubcategoryInput.hidden = !checkbox.checked;
+      }
 
       if (row.dataset.bound === "true") return;
       row.dataset.bound = "true";
       checkbox.addEventListener("change", () => {
         if (!state.draft.issues[issue]) state.draft.issues[issue] = {};
         textarea.hidden = !checkbox.checked;
+        if (customSubcategoryInput) customSubcategoryInput.hidden = !checkbox.checked;
         if (checkbox.checked) {
           state.draft.issues[issue][subcategory] = textarea.value;
+          if (customSubcategoryInput) {
+            if (!state.draft.customSubcategories[issue]) state.draft.customSubcategories[issue] = {};
+            state.draft.customSubcategories[issue][subcategory] = customSubcategoryInput.value.trim();
+          }
         } else {
           delete state.draft.issues[issue][subcategory];
           textarea.value = "";
+          if (customSubcategoryInput) {
+            delete state.draft.customSubcategories?.[issue]?.[subcategory];
+            customSubcategoryInput.value = "";
+          }
         }
         updateIssueSummary(issueNode, issue);
         saveDraft();
@@ -191,6 +215,12 @@ function renderIssueCatalog() {
       textarea.addEventListener("input", () => {
         if (!state.draft.issues[issue]) state.draft.issues[issue] = {};
         state.draft.issues[issue][subcategory] = textarea.value.trim();
+        saveDraft();
+      });
+
+      customSubcategoryInput?.addEventListener("input", () => {
+        if (!state.draft.customSubcategories[issue]) state.draft.customSubcategories[issue] = {};
+        state.draft.customSubcategories[issue][subcategory] = customSubcategoryInput.value.trim();
         saveDraft();
       });
     });
@@ -825,6 +855,13 @@ function formatIssueNotes(entry) {
   return (entry.issues || []).map(({ description }) => cleanTextCell(description)).join("; ");
 }
 
+function formatPartnerSummary(entry) {
+  const issueSummaries = (entry.issues || [])
+    .map(({ subcategory, description }) => `${cleanTextCell(subcategory)}: ${cleanTextCell(description)}`)
+    .join("; ");
+  return `${cleanTextCell(entry.building)} ${cleanTextCell(entry.roomNumber)} -- ${issueSummaries}`;
+}
+
 function buildExportText() {
   const rows = state.entries.map((entry) => [
     entry.building,
@@ -832,6 +869,7 @@ function buildExportText() {
     entry.roomType || "Dorm",
     formatIssuePairs(entry),
     formatIssueNotes(entry),
+    formatPartnerSummary(entry),
   ]);
   return rows.map((row) => row.map(cleanTextCell).join("\t")).join("\n");
 }
@@ -890,11 +928,17 @@ function csvCell(value) {
 }
 
 function buildCsvText() {
-  const rows = [["Building Name", "Room Number", "Room Type", "Categories and Subcategories", "Additional Notes"]];
+  const rows = [["Building Name", "Room Number", "Room Type", "Categories and Subcategories", "Additional Notes", "Partner Summary"]];
   state.entries.forEach((entry) => {
-    rows.push([entry.building, entry.roomNumber, entry.roomType || "Dorm", formatIssuePairs(entry), formatIssueNotes(entry)]);
+    rows.push([entry.building, entry.roomNumber, entry.roomType || "Dorm", formatIssuePairs(entry), formatIssueNotes(entry), formatPartnerSummary(entry)]);
   });
   return rows.map((row) => row.map(csvCell).join(",")).join("\r\n");
+}
+
+function uniqueDownloadId() {
+  const timestamp = new Date().toISOString().replace(/[^0-9]/g, "");
+  const randomPart = globalThis.crypto?.randomUUID?.() || Math.random().toString(36).slice(2);
+  return `${timestamp}-${randomPart}`;
 }
 
 function downloadCsvFile() {
@@ -1011,7 +1055,7 @@ async function downloadAllPhotos() {
     showStatus("Saved photos could not be found on this device.", true);
     return;
   }
-  downloadBlob(createZip(files), `room-check-photos-${new Date().toISOString().slice(0, 10)}.zip`);
+  downloadBlob(createZip(files), `room-check-photos-${uniqueDownloadId()}.zip`);
   showStatus(`${files.length} photo${files.length === 1 ? "" : "s"} saved in one ZIP file.`);
 }
 
