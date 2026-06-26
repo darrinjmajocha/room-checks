@@ -25,8 +25,8 @@ test("buildings are present in HTML before JavaScript runs", () => {
 
 test("native issue categories are present and descending before JavaScript runs", () => {
   const categories = [...index.matchAll(/<details class="issue-card" data-issue="([^"]+)">/g)].map((match) => match[1]);
-  assert.deepEqual(categories, ["Windows", "Walls", "HVAC", "Furniture", "Fridges"]);
-  assert.equal((index.match(/class="subcategory-row"/g) || []).length, 22);
+  assert.deepEqual(categories, ["Windows", "Paint", "HVAC", "Furniture", "Fridges", "Carpet"]);
+  assert.equal((index.match(/class="subcategory-row"/g) || []).length, 24);
 });
 
 test("the self-contained app still includes data and enhancement helpers", () => {
@@ -47,12 +47,13 @@ test("room type dropdown and export controls are present", () => {
   assert.match(index, /<option value="Elevator">Elevator<\/option>/);
   assert.match(app, /roomType: "Dorm"/);
   assert.match(app, /roomType\.addEventListener\("change", saveDraft\)/);
+  assert.match(app, /Carpet: \["Holes & Tears", "Stains", "Other"\]/);
   assert.match(app, /Fridges: \["Needs Cleaning", "Moldy", "Malfunctioning", "Other"\]/);
   assert.match(app, /Furniture: \["Chair", "Desk", "Drawer", "Dresser", "Mattress", "Mattress Frame", "Other"\]/);
   assert.match(app, /HVAC: \["Displaced A\/C Panel", "Needs Servicing", "Other"\]/);
-  assert.match(app, /Walls: \["Chipped Paint", "Cracks", "Holes", "Other"\]/);
+  assert.match(app, /Paint: \["Crack", "Peeling", "Other"\]/);
   assert.match(app, /Windows: \["Window Limiter", "Window Push Bar", "Window Screen", "Other"\]/);
-  assert.match(app, /"Building Name", "Room Number", "Room Type", "Categories and Subcategories", "Additional Notes"/);
+  assert.match(app, /"Building Name", "Room Number", "Room Type", "Categories and Subcategories", "Additional Notes", "Partner Summary"/);
   assert.match(index, /id="exportText"/);
   assert.match(index, /id="copyTextButton"/);
   assert.match(index, /id="downloadTextButton"/);
@@ -65,6 +66,11 @@ test("room type dropdown and export controls are present", () => {
   assert.match(app, /function buildExportText/);
   assert.match(app, /navigator\.clipboard\.writeText/);
   assert.match(app, /function buildCsvText/);
+  assert.match(app, /function formatPartnerSummary/);
+  assert.match(app, /function uniqueDownloadId/);
+  assert.match(app, /room-check-photos-\$\{uniqueDownloadId\(\)\}\.zip/);
+  assert.match(index, /class="custom-subcategory-input"/);
+  assert.match(app, /customSubcategories/);
   assert.match(app, /function createZip/);
 });
 
