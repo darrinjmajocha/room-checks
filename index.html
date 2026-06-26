@@ -102,34 +102,28 @@
                   <input type="checkbox" />
                   <span>Other</span>
                 </label>
+                <input class="custom-subcategory-input" type="text" placeholder="Custom sub-category" hidden />
                 <textarea rows="3" placeholder="Describe what needs attention..." hidden></textarea>
               </div>
             </div>
           </details>
-          <details class="issue-card" data-issue="Walls">
+          <details class="issue-card" data-issue="Paint">
             <summary class="issue-toggle">
-              <span class="issue-name">Walls</span>
+              <span class="issue-name">Paint</span>
               <span class="issue-summary">Tap to expand</span>
             </summary>
             <div class="subcategory-list">
-              <div class="subcategory-row" data-subcategory="Chipped Paint">
+              <div class="subcategory-row" data-subcategory="Crack">
                 <label class="subcategory-check">
                   <input type="checkbox" />
-                  <span>Chipped Paint</span>
+                  <span>Crack</span>
                 </label>
                 <textarea rows="3" placeholder="Describe what needs attention..." hidden></textarea>
               </div>
-              <div class="subcategory-row" data-subcategory="Cracks">
+              <div class="subcategory-row" data-subcategory="Peeling">
                 <label class="subcategory-check">
                   <input type="checkbox" />
-                  <span>Cracks</span>
-                </label>
-                <textarea rows="3" placeholder="Describe what needs attention..." hidden></textarea>
-              </div>
-              <div class="subcategory-row" data-subcategory="Holes">
-                <label class="subcategory-check">
-                  <input type="checkbox" />
-                  <span>Holes</span>
+                  <span>Peeling</span>
                 </label>
                 <textarea rows="3" placeholder="Describe what needs attention..." hidden></textarea>
               </div>
@@ -138,6 +132,7 @@
                   <input type="checkbox" />
                   <span>Other</span>
                 </label>
+                <input class="custom-subcategory-input" type="text" placeholder="Custom sub-category" hidden />
                 <textarea rows="3" placeholder="Describe what needs attention..." hidden></textarea>
               </div>
             </div>
@@ -167,6 +162,7 @@
                   <input type="checkbox" />
                   <span>Other</span>
                 </label>
+                <input class="custom-subcategory-input" type="text" placeholder="Custom sub-category" hidden />
                 <textarea rows="3" placeholder="Describe what needs attention..." hidden></textarea>
               </div>
             </div>
@@ -224,6 +220,7 @@
                   <input type="checkbox" />
                   <span>Other</span>
                 </label>
+                <input class="custom-subcategory-input" type="text" placeholder="Custom sub-category" hidden />
                 <textarea rows="3" placeholder="Describe what needs attention..." hidden></textarea>
               </div>
             </div>
@@ -260,6 +257,37 @@
                   <input type="checkbox" />
                   <span>Other</span>
                 </label>
+                <input class="custom-subcategory-input" type="text" placeholder="Custom sub-category" hidden />
+                <textarea rows="3" placeholder="Describe what needs attention..." hidden></textarea>
+              </div>
+            </div>
+          </details>
+          <details class="issue-card" data-issue="Carpet">
+            <summary class="issue-toggle">
+              <span class="issue-name">Carpet</span>
+              <span class="issue-summary">Tap to expand</span>
+            </summary>
+            <div class="subcategory-list">
+              <div class="subcategory-row" data-subcategory="Holes &amp; Tears">
+                <label class="subcategory-check">
+                  <input type="checkbox" />
+                  <span>Holes &amp; Tears</span>
+                </label>
+                <textarea rows="3" placeholder="Describe what needs attention..." hidden></textarea>
+              </div>
+              <div class="subcategory-row" data-subcategory="Stains">
+                <label class="subcategory-check">
+                  <input type="checkbox" />
+                  <span>Stains</span>
+                </label>
+                <textarea rows="3" placeholder="Describe what needs attention..." hidden></textarea>
+              </div>
+              <div class="subcategory-row" data-subcategory="Other">
+                <label class="subcategory-check">
+                  <input type="checkbox" />
+                  <span>Other</span>
+                </label>
+                <input class="custom-subcategory-input" type="text" placeholder="Custom sub-category" hidden />
                 <textarea rows="3" placeholder="Describe what needs attention..." hidden></textarea>
               </div>
             </div>
@@ -313,7 +341,7 @@
           </div>
           <span id="entryCount" class="count-pill">0 entries</span>
         </div>
-        <p class="hint">The tab-separated text below has no header row and pastes into spreadsheet columns A–E: Building Name, Room Number, Room Type, Categories and Subcategories, and Additional Notes.</p>
+        <p class="hint">The tab-separated text below has no header row and pastes into spreadsheet columns A–F: Building Name, Room Number, Room Type, Categories and Subcategories, Additional Notes, and Partner Summary.</p>
         <label class="export-label" for="exportText">Copyable room-check text</label>
         <textarea id="exportText" class="export-text" rows="10" readonly placeholder="Saved room data will appear here."></textarea>
         <div class="export-actions">
