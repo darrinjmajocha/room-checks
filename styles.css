@@ -97,10 +97,11 @@ textarea { margin-top: 0.75rem; resize: vertical; }
 .issue-name { font-weight: 900; }
 .issue-summary { color: var(--muted); font-size: 0.9rem; }
 .subcategory-list { padding: 0.25rem 0.85rem 0.75rem; display: grid; gap: 0.4rem; }
-.subcategory-list[hidden], textarea[hidden] { display: none; }
+.subcategory-list[hidden], textarea[hidden], .custom-subcategory-input[hidden] { display: none; }
 .subcategory-row { border-top: 1px solid #eef1f5; padding-top: 0.45rem; }
 .subcategory-check { display: flex; align-items: center; gap: 0.7rem; font-weight: 700; }
 .subcategory-check input { width: 1.25rem; height: 1.25rem; accent-color: var(--rit-orange); }
+.custom-subcategory-input { width: 100%; border: 1px solid var(--line); border-radius: 0.75rem; padding: 0.85rem; margin-top: 0.75rem; }
 .custom-issues { border-top: 1px solid var(--line); margin-top: 1.25rem; padding-top: 1.25rem; }
 .custom-issue-list { display: grid; gap: 0.75rem; }
 .custom-issue-row { display: grid; gap: 0.75rem; border: 1px solid var(--line); border-radius: 0.85rem; padding: 0.9rem; background: #fbfcfe; }
